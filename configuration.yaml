@@ -1,21 +1,19 @@
-
-history:
-frontend:
-logbook:
-system_health:
-python_script:
-energy:
 sun:
+mqtt:
+energy:
+logbook:
+history:
 recorder:
+frontend:
 media_source:
+system_health:
 
-input_boolean:
+input_text:
 input_button:
-input_datetime:
 input_number:
 input_select:
-input_text:
-
+input_boolean:
+input_datetime:
 
 http:
   use_x_forwarded_for: true
@@ -33,12 +31,9 @@ google_assistant:
 tts:
   - platform: google_translate
 
-mqtt:
-
 group: !include groups.yaml
-automation: !include automations.yaml
-sensor: !include sensors.yaml
-utility_meter: !include utilitys.yaml
 camera: !include camera.yaml
 notify: !include notify.yaml
+sensor: !include sensors.yaml
+utility_meter: !include utilitys.yaml
 pyscript: !include pyscript/config.yaml
