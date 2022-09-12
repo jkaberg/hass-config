@@ -47,11 +47,10 @@ def sunrise_or_nobody_home(**kwargs):
  
 
 # Kveld- og morgenbelysning
-@time_trigger("once(05:30)")
-@time_trigger("once(sunset - 1h)")
+@time_trigger("once(05:30)", "once(sunset - 1h)")
 @state_trigger("group.someone_home == 'home'")
 @state_active("group.someone_home == 'home'")
-@time_active("range(05:30, sunrise + 1h) or range(sunset - 1h, 22:30)")
+@time_active("range(05:30, sunrise + 1h)", "range(sunset - 1h, 22:30)")
 def morning_sunset_light(**kwargs):
     light.turn_on(entity_id="light.sunset_sunrise_lights", 
                     brightness=LIGHT_BRIGHTNESS,
