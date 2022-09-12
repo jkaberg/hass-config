@@ -1,0 +1,5 @@
+ - name: varsle_telefoner
+   platform: group
+   services:
+     - service: mobile_app_iphone
+     - service: mobile_app_joel_sin_iphone2

@@ -1,0 +1,26 @@
+- platform: time_date
+  display_options:
+    - 'time'
+
+- platform: nordpool
+  VAT: True
+  currency: "NOK"
+  region: "Tr.heim"
+  precision: 2 
+
+- platform: integration
+  name: energy_per_hour2
+  source: sensor.strommaler_power
+  unit_prefix: k
+  method: left
+
+- platform: template
+  sensors:
+    azimuth:
+      friendly_name: "Sun Azimuth"
+      unit_of_measurement: 'degrees'
+      value_template: "{{ state_attr('sun.sun', 'azimuth') }}"
+    panasonic_ac_inside_temperature:
+      friendly_name: "Inside temperature"
+      unit_of_measurement: '°C'
+      value_template: "{{ state_attr('climate.panasonic_ac', 'current_temperature') }}"

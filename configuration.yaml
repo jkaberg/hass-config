@@ -1,0 +1,44 @@
+
+history:
+frontend:
+logbook:
+system_health:
+python_script:
+energy:
+sun:
+recorder:
+media_source:
+
+input_boolean:
+input_button:
+input_datetime:
+input_number:
+input_select:
+input_text:
+
+
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 172.16.0.0/12
+  ip_ban_enabled: true
+  login_attempts_threshold: 3
+   
+google_assistant:
+  project_id: g2hast
+  service_account: !include google_service_account.json
+  report_state: true
+  expose_by_default: true
+
+tts:
+  - platform: google_translate
+
+mqtt:
+
+group: !include groups.yaml
+automation: !include automations.yaml
+sensor: !include sensors.yaml
+utility_meter: !include utilitys.yaml
+camera: !include camera.yaml
+notify: !include notify.yaml
+pyscript: !include pyscript/config.yaml
