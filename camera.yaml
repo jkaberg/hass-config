@@ -4,6 +4,6 @@
   username: !secret xiaomi_cloud_username
   password: !secret xiaomi_cloud_password
   draw: ['all']
-  scan_interval: 10
+  scan_interval: 30
   attributes:
     - calibration_points

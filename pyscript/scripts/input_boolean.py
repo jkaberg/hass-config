@@ -3,7 +3,7 @@
 @state_trigger("sensor.vaskerom_vaskemaskin_power", state_hold=600)
 @state_trigger("sensor.vaskerom_torketrommel_power", state_hold=240)
 @state_trigger("sensor.kjokken_oppvaskmaskin_power", state_hold=720)
-def input_boolean_generic(value=None, var_name=None, **kwargs):
+def input_boolean_generic(value=None, var_name=None):
     """
     Subscribe to various power sensor and set corresponding input_boolean to true/false
 
@@ -21,7 +21,7 @@ def input_boolean_generic(value=None, var_name=None, **kwargs):
 
 @state_trigger("input_boolean.kaffekoker_active == 'off'", state_hold=10)
 @state_trigger("input_boolean.kaffekoker_active == 'on'", state_hold=1200) # 20 min
-def manage_coffemaker(value=None, **kwargs):
+def manage_coffemaker(value=None):
     """
     Turn off coffemaker after 20 min, and then reactivate the plug instantly
     """

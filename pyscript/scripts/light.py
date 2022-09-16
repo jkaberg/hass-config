@@ -1,11 +1,11 @@
-import homeassistant
+from homeassistant.helpers import entity_registry
 
-LIGHT_BRIGHTNESS=20
-LIGHT_TRANSITION=20
-
+#################
+# Indoor lights #
+#################
 
 def _get_light_devices():
-    ent_reg = homeassistant.helpers.entity_registry.async_get(hass)
+    ent_reg = entity_registry.async_get(hass)
     lights = {}
 
     for entity in ent_reg.entities:
@@ -22,7 +22,7 @@ def _get_light_devices():
 # Soloppgang eller ingen hjemme (alle lys av)
 @time_trigger("once(sunrise + 1h)")
 @state_trigger("group.someone_home == 'not_home'", state_hold=30)
-def sunrise_or_nobody_home(**kwargs):
+def sunrise_or_nobody_home():
     """ 
         Turns of all lights 1h after sunrise or
         when nobody home.
@@ -32,7 +32,7 @@ def sunrise_or_nobody_home(**kwargs):
 
     # zigbee group/scene
     light.turn_off(entity_id="light.all_lights", 
-                   transition=LIGHT_TRANSITION)
+                   transition=20)
     switch.turn_off(entity_id="switch.all_lights")
 
     # happy wife, happy life
@@ -50,11 +50,11 @@ def sunrise_or_nobody_home(**kwargs):
 @time_trigger("once(05:30)", "once(sunset - 1h)")
 @state_trigger("group.someone_home == 'home'")
 @state_active("group.someone_home == 'home'")
-@time_active("range(05:30, sunrise + 1h)", "range(sunset - 1h, 22:30)")
-def morning_sunset_light(**kwargs):
+@time_active("range(05:30, sunrise + 1h)", "range(sunset - 1h, 22:00)")
+def morning_sunset_light():
     light.turn_on(entity_id="light.sunset_sunrise_lights", 
-                    brightness=LIGHT_BRIGHTNESS,
-                    transition=LIGHT_TRANSITION)
+                  brightness=20,
+                  transition=20)
     switch.turn_on(entity_id="switch.night_lights")
 
     zwave_devices = ['light.taklys_trapp',
@@ -64,20 +64,40 @@ def morning_sunset_light(**kwargs):
     zwave_js.multicast_set_value(entity_id=zwave_devices,
                                  command_class='38',
                                  property='targetValue',
-                                 value=LIGHT_BRIGHTNESS)
+                                 value=10)
 
 # Nattbelysning
 @time_trigger("once(22:30)")
-@state_active("group.someone_home == 'home'")
-def night_light(**kwargs):
+def night_light():
     lights = _get_light_devices()
 
     light.turn_off(entity_id="light.sunset_sunrise_lights",
-                    transition=LIGHT_TRANSITION)
-    #switch.turn_on(entity_id="switch.night_lights")
+                   transition=20)
 
     # z-wave multicast shut down all lights
     zwave_js.multicast_set_value(entity_id=lights.get('zwave_js'),
                                  command_class='38',
                                  property='targetValue',
                                  value=0)
+
+##################
+# Outdoor lights #
+##################
+
+@time_trigger("once(sunrise + 30min)")
+def outdoor_light_off():
+    devices = ['switch.utelys_nord']
+
+    zwave_js.multicast_set_value(entity_id=devices,
+                                 command_class='37',
+                                 property='targetValue',
+                                 value=False)
+
+@time_trigger("once(sunset - 30min)")
+def outdoor_light_on():
+    devices = ['switch.utelys_nord']
+
+    zwave_js.multicast_set_value(entity_id=devices,
+                                 command_class='37',
+                                 property='targetValue',
+                                 value=True)

@@ -24,3 +24,12 @@
       friendly_name: "Inside temperature"
       unit_of_measurement: '°C'
       value_template: "{{ state_attr('climate.panasonic_ac', 'current_temperature') }}"
+
+- platform: systemmonitor
+  resources:
+    - type: memory_use_percent
+    - type: processor_use
+    - type: last_boot
+    - type: load_15m
+    - type: load_5m
+    - type: load_1m

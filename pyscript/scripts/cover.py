@@ -6,12 +6,19 @@
 #                and float(sensor.vaerstasjon_velocity) <= 25", 
 #                state_hold=60)
 #@state_active("cover.screens_kortvegg == 'open'")
-def kortvegg_ned(**kwargs):
+def kortvegg_close():
     cover.close_cover(entity_id='cover.screens_kortvegg')
 
 # ta opp etter 15 min
-#@state_trigger("int(sensor.utendor_bevegelse_sensor_illuminance_lux) <= 13000", state_hold=900)
-#@state_trigger("float(sensor.vaerstasjon_velocity) >= 25")
+#@state_trigger("int(sensor.utendor_bevegelse_sensor_illuminance_lux) <= 13000",
+#               "float(sensor.vaerstasjon_velocity) >= 20",
+#               state_hold=900)
 #@state_active("cover.screens_kortvegg == 'closed'")
-def kortvegg_opp(**kwargs):
+def kortvegg_open():
     cover.open_cover(entity_id='cover.screens_kortvegg')
+
+
+@time_trigger("once(08:30)", "once(22:30)")
+@state_active("cover.garage_port == 'open'")
+def garage_port_close():
+    cover.close_cover(entity_id='cover.garage_port')

@@ -37,7 +37,6 @@ def restore(devices):
         devices = [devices]
 
     for device in devices:
-        log.error(f"resume {device}")
         if device.startswith('switch'):
             switch.turn_on(entity_id=device)
         elif device.startswith('light'):
@@ -51,6 +50,9 @@ def restore(devices):
                 climate.set_temperature(entity_id=device,
                                         temperature=new_temp)
         elif device.startswith('easee'):
+            if switch.garasje_is_enabled == 'off':
+                switch.turn_on(entity_id='switch.garasje_is_enabled')
+
             easee.set_charger_max_limit(charger_id=device.replace('easee.', ''),
                                         current=EV_CHARGER_CURRENT_ON)
 
@@ -60,7 +62,6 @@ def idle(devices):
         devices = [devices]
 
     for device in devices:
-        log.error(f"idle {device}")
         if device.startswith('switch'):
             switch.turn_off(entity_id=device)
         elif device.startswith('light'):
