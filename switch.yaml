@@ -1,0 +1,29 @@
+- platform: template
+  switches:
+    utelys:
+      value_template: >-
+        {% if is_state('switch.utelys_nord', 'on') and is_state('switch.utelys_sor', 'on') %}
+          on
+        {% else %}
+          off
+        {% endif %}
+      turn_on:
+        service: zwave_js.multicast_set_value
+        data:
+          command_class: '37'
+          property: targetValue
+          value: true
+        target:
+          entity_id:
+            - switch.utelys_nord
+            - switch.utelys_sor
+      turn_off:
+        service: zwave_js.multicast_set_value
+        data:
+          command_class: '37'
+          property: targetValue
+          value: false
+        target:
+          entity_id:
+            - switch.utelys_nord
+            - switch.utelys_sor

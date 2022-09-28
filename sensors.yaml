@@ -10,6 +10,7 @@
 
 - platform: integration
   name: energy_per_hour2
+  unique_id: energy_per_hour2
   source: sensor.strommaler_power
   unit_prefix: k
   method: left
@@ -24,6 +25,13 @@
       friendly_name: "Inside temperature"
       unit_of_measurement: '°C'
       value_template: "{{ state_attr('climate.panasonic_ac', 'current_temperature') }}"
+#    vvb_temperature:
+#      friendly_name: "Average temperature VVB"
+#      unit_of_measurement: "°C"
+#      state: >-
+#        {% set bedroom = state_attr('climate.bedroom', 'temperature') | float(0) %}
+#        {% set kitchen = state_attr('climate.kitchen', 'temperature') | float(0) %}
+#        {{ ((bedroom + kitchen) / 2) | round(1, default=0) }}
 
 - platform: systemmonitor
   resources:

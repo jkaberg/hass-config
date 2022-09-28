@@ -1,0 +1,30 @@
+- platform: template
+  sensors:
+    kaffekoker:
+      friendly_name: "Kaffekoker"
+      device_class: power
+      icon_template: mdi:coffee-maker
+      value_template: "{{ states('sensor.kaffekoker_power')|float > 0 }}"
+    avfukter:
+      friendly_name: "Avfukter"
+      device_class: power
+      icon_template: mdi:air-humidifier
+      value_template: "{{ states('sensor.vaskerom_avfukter_power')|float > 0 }}"
+    oppvaskmaskin:
+      friendly_name: "Oppvaskmaskin"
+      delay_off: "00:05:00"
+      device_class: power
+      icon_template: mdi:dishwasher
+      value_template: "{{ states('sensor.kjokken_oppvaskmaskin_power')|float > 0 }}"
+    vaskemaskin:
+      friendly_name: "Vaskemaskin"
+      delay_off: "00:12:00"
+      device_class: power
+      icon_template: mdi:washing-machine
+      value_template: "{{ states('sensor.vaskerom_vaskemaskin_power')|float > 10 }}"
+    torketrommel:
+      friendly_name: "Tørketrommel"
+      delay_off: "00:22:00"
+      device_class: power
+      icon_template: mdi:tumble-dryer
+      value_template: "{{ states('sensor.vaskerom_torketrommel_power')|float > 0 }}"

@@ -4,7 +4,7 @@ PYSCRIPT_PWR_CTRL_VARNAME = "pyscript.PWR_CTRL"
 #################
 
 # Priority ranging 'low' to 'critical'
-DEVICE_STAGES = {8.4: ['switch.varmtvannsbereder',
+DEVICE_STAGES = {8.4: ['switch.vaskerom_vvb',
                        'easee.EHCQPVGQ'],
                  8.7: ['dummy.test'],
                  9.0: ['dummy.test'],

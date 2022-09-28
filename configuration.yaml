@@ -36,5 +36,8 @@ cover: !include covers.yaml
 camera: !include camera.yaml
 notify: !include notify.yaml
 sensor: !include sensors.yaml
+switch: !include switch.yaml
+climate: !include climate.yaml
 utility_meter: !include utilitys.yaml
 pyscript: !include pyscript/config.yaml
+binary_sensor: !include binary_sensors.yaml

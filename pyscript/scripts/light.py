@@ -57,14 +57,14 @@ def morning_sunset_light():
                   transition=20)
     switch.turn_on(entity_id="switch.night_lights")
 
-    zwave_devices = ['light.taklys_trapp',
-                     'light.taklys_inngang',
-                     'light.taklys_bad_1_etg']
+#    zwave_devices = ['light.taklys_trapp',
+#                     'light.taklys_inngang',
+#                     'light.taklys_bad_1_etg']
 
-    zwave_js.multicast_set_value(entity_id=zwave_devices,
-                                 command_class='38',
-                                 property='targetValue',
-                                 value=10)
+#    zwave_js.multicast_set_value(entity_id=zwave_devices,
+#                                 command_class='38',
+#                                 property='targetValue',
+#                                 value=10)
 
 # Nattbelysning
 @time_trigger("once(22:30)")
@@ -86,18 +86,8 @@ def night_light():
 
 @time_trigger("once(sunrise + 30min)")
 def outdoor_light_off():
-    devices = ['switch.utelys_nord']
-
-    zwave_js.multicast_set_value(entity_id=devices,
-                                 command_class='37',
-                                 property='targetValue',
-                                 value=False)
+    switch.turn_off(entity_id="switch.utelys")
 
 @time_trigger("once(sunset - 30min)")
 def outdoor_light_on():
-    devices = ['switch.utelys_nord']
-
-    zwave_js.multicast_set_value(entity_id=devices,
-                                 command_class='37',
-                                 property='targetValue',
-                                 value=True)
+    switch.turn_on(entity_id="switch.utelys")
