@@ -8,10 +8,10 @@ def _get_pretty_name(ent):
         return entity.name
     return None
 
-def _notify(msg, title = None, tts = False):
+def _notify(msg, title='', speak=False):
     notify.varsle_telefoner(message=msg, title=title)
             
-    if group.someone_home == 'home' and tts:
+    if group.someone_home == 'home' and speak:
         tts.google_translate_say(entity_id='media_player.nestmini7392',
                                  message=msg,
                                  language='no')
@@ -50,7 +50,7 @@ def windows_open_and_rainfall(value=None):
         if notify_devices:
             msg = f"{notify_devices} er åpent og det er meldt nedbør."
 
-            _notify(title="Lukk vinduer!", msg=msg, tts=True)
+            _notify(title="Lukk vinduer!", msg=msg, speak=True)
 
 @state_trigger("float(sensor.kjeller_ytterdor_sensor_temperature) <= 3")
 def cold_basement():
@@ -73,7 +73,7 @@ def notify_machines_compelete(value=None, var_name=None):
             name = 'Vaskemaskin'
 
         if name:
-            _notify(msg=f"{name} er ferdig!", tts=True)
+            _notify(msg=f"{name} er ferdig!", speak=True)
 
 
 @time_trigger("once(20:00:00)")

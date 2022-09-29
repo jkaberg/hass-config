@@ -2,7 +2,7 @@
     name: Varmtvannsbereder
     unique_id: "varmtvannsbereder"
     heater: switch.vaskerom_vvb
-    target_sensor: sensor.vaskerom_vvb_air_temperature_2
+    target_sensor: sensor.vaskerom_vvb_temperatur
     min_temp: 50
     max_temp: 90
     target_temp: 75

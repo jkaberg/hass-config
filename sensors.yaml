@@ -25,13 +25,13 @@
       friendly_name: "Inside temperature"
       unit_of_measurement: '°C'
       value_template: "{{ state_attr('climate.panasonic_ac', 'current_temperature') }}"
-#    vvb_temperature:
-#      friendly_name: "Average temperature VVB"
-#      unit_of_measurement: "°C"
-#      state: >-
-#        {% set bedroom = state_attr('climate.bedroom', 'temperature') | float(0) %}
-#        {% set kitchen = state_attr('climate.kitchen', 'temperature') | float(0) %}
-#        {{ ((bedroom + kitchen) / 2) | round(1, default=0) }}
+    vaskerom_vvb_temperatur:
+      friendly_name: "VVB temperatur justert"
+      icon_template: mdi:coolant-temperature
+      unit_of_measurement: '°C'
+      value_template: "{{ (states('sensor.vaskerom_vvb_air_temperature_2') | float(0) + 19.0 | float(0))  | round(1) }}"  
+
+
 
 - platform: systemmonitor
   resources:
