@@ -23,12 +23,11 @@ def heatpump_use_heat():
     climate.set_hvac_mode(entity_id='climate.panasonic_ac',
                           hvac_mode='heat')
 
-@state_trigger("float(sensor.vaskerom_humidity) < 40")
-@state_active("switch.vaskerom_avfukter == 'on'")
-def off_humidifier_washingroom():
-    switch.turn_off(entity_id='switch.vaskerom_avfukter')
+@state_trigger("sensor.vaskerom_humidity")
+def handle_humidifier(value=None):
+    value = float(value)
 
-@state_trigger("float(sensor.vaskerom_humidity) > 40")
-@state_active("switch.vaskerom_avfukter == 'off'")
-def on_humidifier_washingroom():
-    switch.turn_on(entity_id='switch.vaskerom_avfukter')
+    if value > 40 and switch.vaskerom_avfukter == 'off':
+        switch.turn_on(entity_id='switch.vaskerom_avfukter')
+    elif value < 40 and switch.vaskerom_avfukter == 'on':
+        switch.turn_off(entity_id='switch.vaskerom_avfukter')

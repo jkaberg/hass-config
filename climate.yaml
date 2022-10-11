@@ -1,10 +1,9 @@
-  - platform: generic_thermostat
-    name: Varmtvannsbereder
-    unique_id: "varmtvannsbereder"
-    heater: switch.vaskerom_vvb
-    target_sensor: sensor.vaskerom_vvb_temperatur
-    min_temp: 50
-    max_temp: 90
-    target_temp: 75
-    hot_tolerance: 100
-    precision: 1
+#  - platform: generic_thermostat
+#    name: Varmtvannsbereder
+#    unique_id: "varmtvannsbereder"
+#    heater: switch.vaskerom_vvb
+#    target_sensor: sensor.vaskerom_vvb_temperatur
+#    min_temp: 50
+#    max_temp: 90
+#    hot_tolerance: 100
+#    precision: 1

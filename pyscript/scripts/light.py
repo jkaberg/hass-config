@@ -38,6 +38,7 @@ def sunrise_or_nobody_home():
     # happy wife, happy life
     if device_tracker.iphone_2 == 'home':
         lights.get('zwave_js').remove('light.taklys_kontor')
+        lights.get('zwave_js').remove('light.kontor_lampe_hoyre')
 
     # z-wave multicast shut down all lights
     zwave_js.multicast_set_value(entity_id=lights.get('zwave_js'),
@@ -84,10 +85,10 @@ def night_light():
 # Outdoor lights #
 ##################
 
-@time_trigger("once(sunrise + 30min)")
+@time_trigger("once(sunrise)")
 def outdoor_light_off():
     switch.turn_off(entity_id="switch.utelys")
 
-@time_trigger("once(sunset - 30min)")
+@time_trigger("once(sunseth)")
 def outdoor_light_on():
     switch.turn_on(entity_id="switch.utelys")

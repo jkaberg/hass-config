@@ -3,7 +3,7 @@ from pwr_ctrl.constants import *
 
 state.persist(PYSCRIPT_PWR_CTRL_VARNAME, default_value={})
 
-@state_trigger("input_boolean.powersaver_active")
+#@state_trigger("input_boolean.powersaver_active")
 def powersaver_active(value=None, **kwargs):
     """
     Regulate devices according to energy prices
@@ -23,7 +23,7 @@ def powersaver_active(value=None, **kwargs):
         
         idle(devices)
 
-@state_trigger("input_boolean.force_evcharge")
+#@state_trigger("input_boolean.force_evcharge")
 def force_evcharge(value=None, **kwargs):
     """
     Force EV charging even tho energy price is high
@@ -33,7 +33,7 @@ def force_evcharge(value=None, **kwargs):
     else:
         idle('easee.EHCQPVGQ')
 
-@state_trigger("sensor.accumulated_energy_hourly2")
+#@state_trigger("sensor.accumulated_energy_hourly2")
 def power_handler(value=None, **kwargs):
     """
     Handle tariff effect and shut down devices as we pass stages,
