@@ -1,36 +1,62 @@
-#@state_trigger("sensor.accumulated_energy_hourly2")
-def power_handler(value=None):
+def climate_device(device, state):
+    # {device, setpoint}
+    climate_devices = {'varmtvannsbereder': 75}
+    temp_adjust = 2
+    new_temp = 0
+    
+    if device.endswith('varmtvannsbereder'):
+        temp_adjust = 20
+
+    if state == 'on':
+        new_temp = climate_devices[device.replace('climate.', '')] + temp_adjust
+    else:
+        new_temp = climate_devices[device.replace('climate.', '')] - temp_adjust
+
+    if new_temp:
+        climate.set_temperature(entity_id=device,
+                                temperature=new_temp)
+
+def _device_ctrl(devices, state):
+    if not isinstance(devices, list):
+        devices = [devices]
+
+    if not devices:
+        return
+
+    for device in devices:
+        if device.startswith('climate'):
+            climate_device(device, state)
+        elif device.startswith('easee'):
+            current = 0
+
+            if state == 'on':
+                current = int(input_select.current_easee_charger)
+
+            easee.set_charger_max_limit(charger_id=device.replace('easee.', ''),
+                                        current=current)
+
+@state_trigger("sensor.accumulated_energy_hourly2")
+def power_tariff_handler(value=None):
     value = float(value)
 
-    if value == 0 and input_boolean.powersaver_active == 'on': # resume
-        switch.turn_on(entity_id='switch.vaskerom_vvb')
-        easee.set_charger_max_limit(charger_id='EHCQPVGQ',
-                                    current=int(input_select.current_easee_charger))
+    devices = ['climate.varmtvannsbereder',
+               'easee.EHCQPVGQ']
 
+    if value == 0 and 'on' in (binary_sensor.priceanalyzer_is_five_cheapest, binary_sensor.priceanalyzer_is_ten_cheapest): # resume      
+        _device_ctrl(devices, 'on')
     elif value >= 8.5:
-        switch.turn_off(entity_id='switch.vaskerom_vvb')
-        easee.set_charger_max_limit(charger_id='EHCQPVGQ',
-                                    current=0)
+        _device_ctrl(devices, 'off')
 
 
-#@state_trigger("input_boolean.powersaver_active")
-def powersaver_active(value=None):
-    if value == 'on':
-        switch.turn_on(entity_id='switch.vaskerom_vvb')
-        easee.set_charger_max_limit(charger_id='EHCQPVGQ',
-                                    current=int(input_select.current_easee_charger))
-    else:      
-        switch.turn_off(entity_id='switch.vaskerom_vvb')
-        if input_boolean.force_evcharge == 'off':
-            easee.set_charger_max_limit(charger_id='EHCQPVGQ',
-                                        current=0)
+@state_trigger("binary_sensor.priceanalyzer_is_five_cheapest")
+def power_is_five_cheapest(value=None): # on / off
+    _device_ctrl('climate.varmtvannsbereder', value)
 
+@state_trigger("binary_sensor.priceanalyzer_is_ten_cheapest")
+def power_is_ten_cheapest(value=None): # on / off
+    if not input_boolean.force_evcharge == 'on':
+        _device_ctrl('easee.EHCQPVGQ', value)
 
-#@state_trigger("input_boolean.force_evcharge")
-def force_evcharge(value=None):
-    if value == 'on':
-        easee.set_charger_max_limit(charger_id='EHCQPVGQ',
-                                    current=int(input_select.current_easee_charger))
-    else:
-        easee.set_charger_max_limit(charger_id='EHCQPVGQ',
-                                    current=0)
+@state_trigger("input_boolean.force_evcharge")
+def force_evcharge(value=None): # on / off
+    _device_ctrl('easee.EHCQPVGQ', value)
