@@ -8,6 +8,25 @@
   region: "Tr.heim"
   precision: 2 
 
+- platform: priceanalyzer
+  VAT: True
+  currency: "NOK"
+  region: "Tr.heim"
+  price_type: kWh
+  additional_costs: >-
+    {% set s = {
+        "day": 0.3626,
+        "night": 0.2839
+    }
+    %}
+    {% if now().weekday() in [5, 6] %} # saturday and sunday
+        {{ s.night | float }}
+    {% elif now().hour >= 6 and now().hour < 23 %}
+        {{ s.day | float }}
+    {% else %}
+        {{ s.night | float }}
+    {% endif %}
+
 - platform: integration
   name: energy_per_hour2
   unique_id: energy_per_hour2
@@ -29,9 +48,33 @@
       friendly_name: "VVB temperatur justert"
       icon_template: mdi:coolant-temperature
       unit_of_measurement: '°C'
-      value_template: "{{ (states('sensor.vaskerom_vvb_air_temperature_2') | float(0) + 19.0 | float(0))  | round(1) }}"  
+      value_template: "{{ (states('sensor.vaskerom_vvb_air_temperature_2') | float(0) + 19.0 | float(0))  | round(1) }}"
+    vaskerom_vvb_watt_corrected:
+      unit_of_measurement: 'W'
+      friendly_name: 'VVB effekt justert'  
+      icon_template: mdi:sine-wave  
+      value_template: >-
+        {% if is_state('switch.vaskerom_vvb', 'on') %}
+          {% set corrected_watt = states('sensor.vaskerom_vvb_electric_consumption_w') | float(0) - 354.0 %} # adjust for bad measurement
+          {% if corrected_watt > 25.0 %} # mitigate negative vakues and "false positives"
+            {{ corrected_watt }}
+          {% else %}
+            0.0
+          {% endif %}
+        {% else %}
+          0.0
+        {% endif %}
 
-
+    priceanalyzer_current_price:
+      friendly_name: "Nåværende strømpris"
+      unit_of_measurement: 'NOK/kWh'
+      value_template: "{{ state_attr('sensor.priceanalyzer_tr_heim', 'value') }}"
+    priceanalyzer_is_ten_cheapest:
+      friendly_name: "Laveste 10h strømpris"
+      value_template: "{{ state_attr('sensor.priceanalyzer_tr_heim', 'is_ten_cheapest') }}"
+    priceanalyzer_is_five_cheapest:
+      friendly_name: "Laveste 5h strømpris"
+      value_template: "{{ state_attr('sensor.priceanalyzer_tr_heim', 'is_five_cheapest') }}"
 
 - platform: systemmonitor
   resources:

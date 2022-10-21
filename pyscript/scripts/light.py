@@ -20,7 +20,7 @@ def _get_light_devices():
     return lights
 
 # Soloppgang eller ingen hjemme (alle lys av)
-@time_trigger("once(sunrise + 1h)")
+@time_trigger("once(sunrise + 20m)")
 @state_trigger("group.someone_home == 'not_home'", state_hold=30)
 def sunrise_or_nobody_home():
     """ 
@@ -38,7 +38,6 @@ def sunrise_or_nobody_home():
     # happy wife, happy life
     if device_tracker.iphone_2 == 'home':
         lights.get('zwave_js').remove('light.taklys_kontor')
-        lights.get('zwave_js').remove('light.kontor_lampe_hoyre')
 
     # z-wave multicast shut down all lights
     zwave_js.multicast_set_value(entity_id=lights.get('zwave_js'),
@@ -48,10 +47,10 @@ def sunrise_or_nobody_home():
  
 
 # Kveld- og morgenbelysning
-@time_trigger("once(05:30)", "once(sunset - 1h)")
+@time_trigger("once(05:30)", "once(sunset - 20m)")
 @state_trigger("group.someone_home == 'home'")
 @state_active("group.someone_home == 'home'")
-@time_active("range(05:30, sunrise + 1h)", "range(sunset - 1h, 22:00)")
+@time_active("range(05:30, sunrise + 30m)", "range(sunset - 20m, 22:00)")
 def morning_sunset_light():
     light.turn_on(entity_id="light.sunset_sunrise_lights", 
                   brightness=20,
@@ -69,6 +68,7 @@ def morning_sunset_light():
 
 # Nattbelysning
 @time_trigger("once(22:30)")
+@state_active("group.someone_home == 'home'")
 def night_light():
     lights = _get_light_devices()
 
@@ -86,9 +86,11 @@ def night_light():
 ##################
 
 @time_trigger("once(sunrise)")
+@state_active("switch.utelys == 'on'")
 def outdoor_light_off():
     switch.turn_off(entity_id="switch.utelys")
 
-@time_trigger("once(sunseth)")
+@time_trigger("once(sunset)")
+@state_active("switch.utelys == 'off'")
 def outdoor_light_on():
     switch.turn_on(entity_id="switch.utelys")

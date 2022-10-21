@@ -13,9 +13,9 @@ def doorbell_ring():
                             entity_id=devices,
                             announce=True)
 
-@time_trigger("cron(*/3 * * * *)")
-@state_trigger("media_player.nestmini7392 == 'off' \
-                or media_player.nestmini9210 == 'off'")
+#@time_trigger("cron(*/3 * * * *)")
+#@state_trigger("media_player.nestmini7392 == 'off' \
+#                or media_player.nestmini9210 == 'off'")
 def wake_players():
     """
     Mainly used with the doorbell to keep the mini's awake.

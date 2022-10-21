@@ -1,9 +1,9 @@
-PYSCRIPT_PWR_CTRL_VARNAME = "pyscript.PWR_CTRL"
 #################
 # Device stages #
 #################
 
 # Priority ranging 'low' to 'critical'
+# use Enums? Inspiration: https://github.com/rhasselbaum/ha-pyscript/blob/mainline/climate.py
 DEVICE_STAGES = {8.4: ['switch.vaskerom_vvb',
                        'easee.EHCQPVGQ'],
                  8.7: ['dummy.test'],

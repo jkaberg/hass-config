@@ -1,4 +1,4 @@
-@state_trigger("sensor.accumulated_energy_hourly2")
+#@state_trigger("sensor.accumulated_energy_hourly2")
 def power_handler(value=None):
     value = float(value)
 
@@ -13,7 +13,7 @@ def power_handler(value=None):
                                     current=0)
 
 
-@state_trigger("input_boolean.powersaver_active")
+#@state_trigger("input_boolean.powersaver_active")
 def powersaver_active(value=None):
     if value == 'on':
         switch.turn_on(entity_id='switch.vaskerom_vvb')
@@ -26,7 +26,7 @@ def powersaver_active(value=None):
                                         current=0)
 
 
-@state_trigger("input_boolean.force_evcharge")
+#@state_trigger("input_boolean.force_evcharge")
 def force_evcharge(value=None):
     if value == 'on':
         easee.set_charger_max_limit(charger_id='EHCQPVGQ',

@@ -2,4 +2,4 @@ allow_all_imports: true
 hass_is_global: true
 
 apps:
-#  pwr_ctrl:
+  pwr_ctrl:

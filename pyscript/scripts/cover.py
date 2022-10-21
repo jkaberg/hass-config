@@ -4,7 +4,7 @@
                 and float(sensor.azimuth) <= 255 \
                 and int(sensor.panasonic_ac_outside_temperature) >= 2 \
                 and float(sensor.vaerstasjon_velocity) <= 25", 
-                state_hold=60)
+                state_hold=30)
 @state_active("cover.screen_kortvegg == 'open'")
 def kortvegg_close():
     cover.close_cover(entity_id='cover.screen_kortvegg')
