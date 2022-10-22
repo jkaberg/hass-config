@@ -15,11 +15,11 @@
   price_type: kWh
   additional_costs: >-
     {% if now().weekday() in [5, 6] %}
-        {{ 0.2839 }}
+        0.2839
     {% elif now().hour >= 6 and now().hour < 23 %}
-        {{ 0.3626 }}
+        0.3626
     {% else %}
-        {{ 0.2839 }}
+        0.2839
     {% endif %}
 
 - platform: integration
@@ -43,14 +43,14 @@
       friendly_name: "VVB temperatur justert"
       icon_template: mdi:coolant-temperature
       unit_of_measurement: '°C'
-      value_template: "{{ (states('sensor.vaskerom_vvb_air_temperature_2') | float + 26.0) }}"
+      value_template: "{{ (states('sensor.vaskerom_vvb_air_temperature_2') | float(0) + 26.0) }}"
     vaskerom_vvb_watt_corrected:
       unit_of_measurement: 'W'
       friendly_name: 'VVB effekt justert'  
       icon_template: mdi:sine-wave  
       value_template: >-
         {% if is_state('switch.vaskerom_vvb', 'on') %}
-          {% set corrected_watt = states('sensor.vaskerom_vvb_electric_consumption_w') | float - 354.0 %}
+          {% set corrected_watt = states('sensor.vaskerom_vvb_electric_consumption_w') | float(0) - 354.0 %}
           {% if corrected_watt > 25.0 %}
             {{ corrected_watt }}
           {% else %}
