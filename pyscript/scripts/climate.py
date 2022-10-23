@@ -28,18 +28,15 @@ def heatpump_use_heat():
                           hvac_mode='heat')
 
 @time_trigger("once(05:30)", "once(22:30)")
-@state_trigger("group.someone_home == 'home'", "climate.panasonic_ac == 'heat'")
-@state_active("climate.panasonic_ac == 'heat'")
-@time_active("range(05:30, 22:30)")
+@state_trigger("group.someone_home", "climate.panasonic_ac == 'heat'")
 def heatpump_silent_mode():
     mode = 'medium'
 
-    if group.someone_home == 'home':
+    if group.someone_home == 'home' and is_time_between(time(5,30), time(22,29)):
         mode = 'low'
-            
+
     climate.set_fan_mode(entity_id='climate.panasonic_ac',
                          fan_mode=mode)
-
 
 @state_trigger("sensor.vaskerom_humidity")
 def handle_humidifier(value=None):

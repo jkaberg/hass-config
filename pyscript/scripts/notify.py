@@ -59,7 +59,7 @@ def cold_basement():
 
 
 #@state_trigger("binary_sensor.oppvaskmaskin == 'off'",
-##               "binary_sensor.torketrommel == 'off'",
+#               "binary_sensor.torketrommel == 'off'",
 #               "binary_sensor.vaskemaskin == 'off'",
 #               state_hold=300)
 def notify_machines_compelete(value=None, var_name=None):
