@@ -1,4 +1,3 @@
-
 state.persist("pyscript.PWR_CTRL", default_value=0)
 
 @time_trigger("once(14:30)", "once(21:00)")
@@ -13,7 +12,7 @@ def handle_away_mode(value=None):
         handle_boiler()
         handle_electric_heating(-abs(heating_adjust))
     else: # home
-        handle_boiler(binary_sensor.priceanalyzer_is_five_cheapest)
+        handle_boiler(sensor.vvbsensor_tr_heim)
         handle_electric_heating(sensor.priceanalyzer_tr_heim_2)
 
 @state_trigger("sensor.accumulated_energy_hourly2")
@@ -23,35 +22,25 @@ def handle_power_tariff(value=None):
     heating_adjust = 2
     temp = 0 if not pyscript.PWR_CTRL else float(pyscript.PWR_CTRL)
 
-    # value 9.2
     def check(n, v=value, t=temp):
-
-        # 9.6 > 9.5 and 9.6 > 9.5
         return v > n and n > t
 
     if check(9.5):
-        log.error(f"EXTREME - value {value}")
         handle_electric_heating(-abs(heating_adjust))
     elif check(9):
-        log.error(f"CRITICAL - value {value}")
         handle_boiler()
     elif check(8.5):
-        log.error(f"WARNING - value {value}")
         handle_ev_charger()
     elif value == 0: # resume
-        handle_boiler(binary_sensor.priceanalyzer_is_five_cheapest)
+        handle_boiler(sensor.vvbsensor_tr_heim)
         handle_ev_charger(binary_sensor.priceanalyzer_is_ten_cheapest)
         handle_electric_heating(sensor.priceanalyzer_tr_heim_2)
 
-    pyscript.PWR_CTRL = value #9.1
+    pyscript.PWR_CTRL = value
 
-@state_trigger("sensor.vvbsensor_tr_heim",
-               "input_boolean.away_mode")
-def handle_boiler(value=None): # on / off
-    temp = int(sensor.vvbsensor_tr_heim)
-
-    if input_boolean.away_mode == 'on':
-        temp = 55
+@state_trigger("sensor.vvbsensor_tr_heim")
+def handle_boiler(value=None):
+    temp = 55 if value == None else int(value)
 
     climate.set_temperature(entity_id='climate.varmtvannsbereder',
                             temperature=temp)
@@ -60,7 +49,7 @@ def handle_boiler(value=None): # on / off
                "input_boolean.force_evcharge",
                "input_select.current_easee_charger")
 @state_active("input_boolean.away_mode == 'off'")
-def handle_ev_charger(value=None): # on / off
+def handle_ev_charger(value=None):
     # .isdigit() == current_easee_charger endret seg
     current = int(input_select.current_easee_charger) if 'on' in [value, input_boolean.force_evcharge] or value.isdigit() else 0
 
