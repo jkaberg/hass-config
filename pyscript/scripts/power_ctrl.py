@@ -39,6 +39,7 @@ def handle_power_tariff(value=None):
     pyscript.PWR_CTRL = value
 
 @state_trigger("sensor.vvbsensor_tr_heim")
+@state_active("input_boolean.away_mode == 'off'")
 def handle_boiler(value=None):
     temp = 55 if value == None else int(value)
 
