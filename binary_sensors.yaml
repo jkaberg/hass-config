@@ -31,7 +31,7 @@
 
     priceanalyzer_is_five_cheapest:
       friendly_name: "Price Analyzer - Laveste 5h strømpris"
-      value_template: "{{ state_attr('sensor.priceanalyzer_tr_heim', 'current_hour').is_five_cheapest }}"
+      value_template: "{{ state_attr('sensor.priceanalyzer_tr_heim_2', 'current_hour').is_five_cheapest }}"
     priceanalyzer_is_ten_cheapest:
       friendly_name: "Price Analyzer - Laveste 10h strømpris"
-      value_template: "{{ state_attr('sensor.priceanalyzer_tr_heim', 'current_hour').is_ten_cheapest }}"
+      value_template: "{{ state_attr('sensor.priceanalyzer_tr_heim_2', 'current_hour').is_ten_cheapest }}"

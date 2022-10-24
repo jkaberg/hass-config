@@ -3,45 +3,55 @@ state.persist("pyscript.PWR_CTRL", default_value=0)
 
 @time_trigger("once(14:30)", "once(21:00)")
 def reload_priceanalyzer():
-    homeassistant.reload_config_entry(entity_id='sensor.priceanalyzer_tr_heim')
-
-@state_trigger("sensor.accumulated_energy_hourly2")
-def handle_power_tariff(value=None):
-    value = float(value)
-    heating_adjust = 2
-    temp = 0 if not pyscript.PWR_CTRL else float(pyscript.PWR_CTRL)
-
-    def check(n, v=value, t=temp):
-        return v > n and n > t
-
-    if check(9.5):
-        handle_electric_heating(-abs(heating_adjust))
-    elif check(9):
-        handle_boiler()
-    elif check(8.5):
-        handle_ev_charger()
-    elif value == 0 and input_boolean.away_mode == 'off': # resume
-        handle_boiler(binary_sensor.priceanalyzer_is_five_cheapest)
-        handle_ev_charger(binary_sensor.priceanalyzer_is_ten_cheapest)
-        handle_electric_heating(sensor.priceanalyzer_tr_heim)
-
-    pyscript.PWR_CTRL = value
+    homeassistant.reload_config_entry(entity_id='sensor.priceanalyzer_tr_heim_2')
 
 @state_trigger("input_boolean.away_mode")
 def handle_away_mode(value=None):
     heating_adjust = 4
 
-    if value == 'on':
+    if value == 'on': # away
         handle_boiler()
         handle_electric_heating(-abs(heating_adjust))
-    else:
-        handle_boiler(binary_sensor.priceanalyzer_is_ten_cheapest)
-        handle_electric_heating(sensor.priceanalyzer_tr_heim)
+    else: # home
+        handle_boiler(binary_sensor.priceanalyzer_is_five_cheapest)
+        handle_electric_heating(sensor.priceanalyzer_tr_heim_2)
 
-@state_trigger("binary_sensor.priceanalyzer_is_five_cheapest")
+@state_trigger("sensor.accumulated_energy_hourly2")
 @state_active("input_boolean.away_mode == 'off'")
+def handle_power_tariff(value=None):
+    value = float(value)
+    heating_adjust = 2
+    temp = 0 if not pyscript.PWR_CTRL else float(pyscript.PWR_CTRL)
+
+    # value 9.2
+    def check(n, v=value, t=temp):
+
+        # 9.6 > 9.5 and 9.6 > 9.5
+        return v > n and n > t
+
+    if check(9.5):
+        log.error(f"EXTREME - value {value}")
+        handle_electric_heating(-abs(heating_adjust))
+    elif check(9):
+        log.error(f"CRITICAL - value {value}")
+        handle_boiler()
+    elif check(8.5):
+        log.error(f"WARNING - value {value}")
+        handle_ev_charger()
+    elif value == 0: # resume
+        handle_boiler(binary_sensor.priceanalyzer_is_five_cheapest)
+        handle_ev_charger(binary_sensor.priceanalyzer_is_ten_cheapest)
+        handle_electric_heating(sensor.priceanalyzer_tr_heim_2)
+
+    pyscript.PWR_CTRL = value #9.1
+
+@state_trigger("sensor.vvbsensor_tr_heim",
+               "input_boolean.away_mode")
 def handle_boiler(value=None): # on / off
-    temp = 75 if value == 'on' else 55
+    temp = int(sensor.vvbsensor_tr_heim)
+
+    if input_boolean.away_mode == 'on':
+        temp = 55
 
     climate.set_temperature(entity_id='climate.varmtvannsbereder',
                             temperature=temp)
@@ -49,6 +59,7 @@ def handle_boiler(value=None): # on / off
 @state_trigger("binary_sensor.priceanalyzer_is_ten_cheapest",
                "input_boolean.force_evcharge",
                "input_select.current_easee_charger")
+@state_active("input_boolean.away_mode == 'off'")
 def handle_ev_charger(value=None): # on / off
     # .isdigit() == current_easee_charger endret seg
     current = int(input_select.current_easee_charger) if 'on' in [value, input_boolean.force_evcharge] or value.isdigit() else 0
@@ -56,7 +67,7 @@ def handle_ev_charger(value=None): # on / off
     easee.set_charger_max_limit(charger_id='EHCQPVGQ',
                                 current=current)
 
-@state_trigger("sensor.priceanalyzer_tr_heim")
+@state_trigger("sensor.priceanalyzer_tr_heim_2")
 @state_active("input_boolean.away_mode == 'off'")
 def handle_electric_heating(value=None):
     value = float(value)
@@ -83,5 +94,10 @@ def handle_electric_heating(value=None):
     for heater, temp in heaters.items():
         temp += value
 
-        climate.set_temperature(entity_id=heater,
-                                temperature=temp)
+        try:
+            if temp != float(state.getattr(heater).get('temperature')):
+                climate.set_temperature(entity_id=heater,
+                                        temperature=temp)
+        except TypeError:
+            # device unavilable or similar.
+            pass
