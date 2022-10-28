@@ -5,36 +5,43 @@ def reload_priceanalyzer():
     homeassistant.reload_config_entry(entity_id='sensor.priceanalyzer_tr_heim_2')
 
 @state_trigger("input_boolean.away_mode")
-def handle_away_mode(value=None):
-    if value == 'on': # away
-        handle_boiler(off=True)
-        handle_electric_heating(off=True)
-    else: # home
-        handle_boiler()
-        handle_electric_heating()
+def away_mode(value=None):
+    inactive = False
 
-@state_trigger("sensor.accumulated_energy_hourly2")
+    if value == 'on':
+        inactive = True
+
+    boiler(inactive)
+    heating(inactive)
+
+@state_trigger("sensor.accumulated_energy_hourly2_peak",
+               "sensor.accumulated_energy_hourly2_offpeak")
 @state_active("input_boolean.away_mode == 'off'")
-def handle_power_tariff(value=None):
+def power_tariff(value=None):
     value = float(value)
     temp = 0 if not pyscript.PWR_CTRL else float(pyscript.PWR_CTRL)
 
-    def check(n, v=value, t=temp):
-        return v > n and n > t
+    def check(n, v=value):
+        if v > n and not n == temp:
+            temp = n
+            return True
+        return False
 
     if check(9.5):
-        handle_electric_heating(off=True)
+        heating(inactive=True)
     elif check(9):
-        handle_boiler(off=True)
+        boiler(inactive=True)
     elif check(8.5):
-        handle_ev_charger(off=True)
+        ev_charger(inactive=True)
+    elif value == 0:
+        temp = 0
 
-    pyscript.PWR_CTRL = value
+    pyscript.PWR_CTRL = temp
 
 @time_trigger("cron(0 * * * *)")
 @state_active("input_boolean.away_mode == 'off'")
-def handle_boiler(off=False):
-    temp = 55 if off else int(sensor.vvbsensor_tr_heim)
+def boiler(inactive=False):
+    temp = 55 if inactive else int(sensor.vvbsensor_tr_heim)
 
     climate.set_temperature(entity_id='climate.varmtvannsbereder',
                             temperature=temp)
@@ -43,16 +50,16 @@ def handle_boiler(off=False):
                "input_select.current_easee_charger")
 @time_trigger("cron(0 * * * *)")
 @state_active("input_boolean.away_mode == 'off'")
-def handle_ev_charger(off=False):
-    current = int(input_select.current_easee_charger) if 'on' in [binary_sensor.priceanalyzer_is_ten_cheapest, input_boolean.force_evcharge] and not off else 0
+def ev_charger(inactive=False):
+    current = int(input_select.current_easee_charger) if 'on' in [binary_sensor.priceanalyzer_is_ten_cheapest, input_boolean.force_evcharge] and not inactive else 0
 
     easee.set_charger_max_limit(charger_id='EHCQPVGQ',
                                 current=current)
 
 @time_trigger("cron(0 * * * *)")
 @state_active("input_boolean.away_mode == 'off'")
-def handle_electric_heating(off=False, heating_adjust=2):
-    value = -abs(heating_adjust) if off else float(sensor.priceanalyzer_tr_heim_2)
+def heating(inactive=False, heating_adjust=2):
+    value = -abs(heating_adjust) if inactive else float(sensor.priceanalyzer_tr_heim_2)
 
     BATHROOM = 25
     BEDROOM = 20

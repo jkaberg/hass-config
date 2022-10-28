@@ -1,6 +1,15 @@
-accumulated_energy_hourly2:
+accumulated_energy_hourly_nygaardsvegen:
+  name: "Nygårdsvegen 6 Forbruk"
   source: sensor.energy_per_hour2
   cycle: hourly
+
+accumulated_energy_hourly2:
+  name: "Nygårdsvegen 6 Forbruk"
+  source: sensor.energy_per_hour2
+  cycle: hourly
+  tariffs:
+    - peak
+    - offpeak
 
 accumulated_energy_daily:
   source: sensor.energy_per_hour2

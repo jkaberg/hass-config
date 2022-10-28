@@ -21,6 +21,9 @@ http:
     - 172.16.0.0/12
   ip_ban_enabled: true
   login_attempts_threshold: 3
+
+homeassistant:
+  customize_glob: !include customize.yaml
    
 google_assistant:
   project_id: g2hast

@@ -2,32 +2,18 @@
   display_options:
     - 'time'
 
-- platform: nordpool
-  VAT: True
-  currency: "NOK"
-  region: "Tr.heim"
-  precision: 2 
-
-#- platform: priceanalyzer
-#  VAT: True
-#  currency: "NOK"
-#  region: "Tr.heim"
-#  price_type: kWh
-#  additional_costs: >-
-#    {% if now().weekday() in [5, 6] %}
-#        0.2839
-#    {% elif now().hour >= 6 and now().hour < 23 %}
-#        0.3626
-#    {% else %}
-#        0.2839
-#    {% endif %}
-
 - platform: integration
   name: energy_per_hour2
   unique_id: energy_per_hour2
   source: sensor.strommaler_power
   unit_prefix: k
-  method: left
+
+- platform: derivative
+  source: sensor.energy_per_hour2
+  name: Derivert effekt
+  round: 1
+  unit_time: "h"
+  time_window: "00:05:00"
 
 - platform: template
   sensors:
@@ -61,8 +47,14 @@
         {% endif %}
     priceanalyzer_current_price:
       friendly_name: "Nåværende strømpris"
-      unit_of_measurement: 'NOK/kWh'
+      device_class: monetary
+      unit_of_measurement: NOK/kWh
       value_template: "{{ state_attr('sensor.priceanalyzer_tr_heim_2', 'current_hour').value }}"
+    estimated_hourly_consumption:
+      friendly_name: "Estimert Timeforbruk"
+      unit_of_measurement: 'kWh'
+      device_class: power
+      value_template: "{{ (states('sensor.nygardsvegen_6_forbruk') | float(15) + states('sensor.derivert_effekt') | float(0) * (3600 - now().minute * 60 - now().second) / 3600) | round(3) }}"
 
 - platform: systemmonitor
   resources:
