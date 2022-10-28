@@ -6,80 +6,72 @@ def reload_priceanalyzer():
 
 @state_trigger("input_boolean.away_mode")
 def handle_away_mode(value=None):
-    heating_adjust = 4
-
     if value == 'on': # away
-        handle_boiler()
-        handle_electric_heating(-abs(heating_adjust))
+        handle_boiler(off=True)
+        handle_electric_heating(off=True)
     else: # home
-        handle_boiler(sensor.vvbsensor_tr_heim)
-        handle_electric_heating(sensor.priceanalyzer_tr_heim_2)
+        handle_boiler()
+        handle_electric_heating()
 
 @state_trigger("sensor.accumulated_energy_hourly2")
 @state_active("input_boolean.away_mode == 'off'")
 def handle_power_tariff(value=None):
     value = float(value)
-    heating_adjust = 2
     temp = 0 if not pyscript.PWR_CTRL else float(pyscript.PWR_CTRL)
 
     def check(n, v=value, t=temp):
         return v > n and n > t
 
     if check(9.5):
-        handle_electric_heating(-abs(heating_adjust))
+        handle_electric_heating(off=True)
     elif check(9):
-        handle_boiler()
+        handle_boiler(off=True)
     elif check(8.5):
-        handle_ev_charger()
-    elif value == 0: # resume
-        handle_boiler(sensor.vvbsensor_tr_heim)
-        handle_ev_charger(binary_sensor.priceanalyzer_is_ten_cheapest)
-        handle_electric_heating(sensor.priceanalyzer_tr_heim_2)
+        handle_ev_charger(off=True)
 
     pyscript.PWR_CTRL = value
 
-@state_trigger("sensor.vvbsensor_tr_heim")
+@time_trigger("cron(0 * * * *)")
 @state_active("input_boolean.away_mode == 'off'")
-def handle_boiler(value=None):
-    temp = 55 if value == None else int(value)
+def handle_boiler(off=False):
+    temp = 55 if off else int(sensor.vvbsensor_tr_heim)
 
     climate.set_temperature(entity_id='climate.varmtvannsbereder',
                             temperature=temp)
 
-@state_trigger("binary_sensor.priceanalyzer_is_ten_cheapest",
-               "input_boolean.force_evcharge",
+@state_trigger("input_boolean.force_evcharge",
                "input_select.current_easee_charger")
+@time_trigger("cron(0 * * * *)")
 @state_active("input_boolean.away_mode == 'off'")
-def handle_ev_charger(value=None):
-    # .isdigit() == current_easee_charger endret seg
-    current = int(input_select.current_easee_charger) if 'on' in [value, input_boolean.force_evcharge] or value.isdigit() else 0
+def handle_ev_charger(off=False):
+    current = int(input_select.current_easee_charger) if 'on' in [binary_sensor.priceanalyzer_is_ten_cheapest, input_boolean.force_evcharge] and not off else 0
 
     easee.set_charger_max_limit(charger_id='EHCQPVGQ',
                                 current=current)
 
-@state_trigger("sensor.priceanalyzer_tr_heim_2")
+@time_trigger("cron(0 * * * *)")
 @state_active("input_boolean.away_mode == 'off'")
-def handle_electric_heating(value=None):
-    value = float(value)
+def handle_electric_heating(off=False, heating_adjust=2):
+    value = -abs(heating_adjust) if off else float(sensor.priceanalyzer_tr_heim_2)
 
-    BAD = 25
-    SOVEROM = 20
-    PANELOVN = 21
-    GULVVARME = 22
+    BATHROOM = 25
+    BEDROOM = 20
+    LIVINGROOM = 21
+    FLOOR_HEATING = 22
 
     # climate entity: setpoint
-    heaters = {'climate.panelovn_inngang': PANELOVN,
+    heaters = {'climate.panelovn_inngang': LIVINGROOM,
                'climate.panelovn_hovedsoverom': 18,
-               'climate.panelovn_stort_soverom': SOVEROM,
-               'climate.panelovn_mellom_soverom': SOVEROM,
-               'climate.panelovn_litet_soverom': SOVEROM,
-               'climate.gulvvarme_bad_1_etg': BAD,
-               'climate.gulvvarme_bad_2_etg': BAD,
-               'climate.panasonic_ac': PANELOVN,
-               'climate.gulvvarme_stue': GULVVARME,
-               'climate.gulvvarme_kjokken': GULVVARME,
-               'climate.gulvvarme_tv_stue': GULVVARME,
-               'climate.panelovn_kontor': PANELOVN}
+               'climate.stort_soverom': BEDROOM,
+               'climate.mellom_soverom': BEDROOM,
+               'climate.litet_soverom': BEDROOM,
+               'climate.gulvvarme_bad_1_etg': BATHROOM,
+               'climate.gulvvarme_bad_2_etg': BATHROOM,
+               'climate.panasonic_ac': LIVINGROOM,
+               'climate.gulvvarme_stue': FLOOR_HEATING,
+               'climate.gulvvarme_kjokken': FLOOR_HEATING,
+               'climate.gulvvarme_tv_stue': FLOOR_HEATING,
+               'climate.panelovn_kontor': LIVINGROOM}
 
     for heater, temp in heaters.items():
         temp += value

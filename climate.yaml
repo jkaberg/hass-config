@@ -5,4 +5,39 @@
     target_sensor: sensor.vaskerom_vvb_temp_corrected
     min_temp: 50
     max_temp: 90
+    target_temp: 65
     target_temp_step: 1
+    initial_hvac_mode: "heat"
+
+  - platform: generic_thermostat
+    name: Stort soverom
+    unique_id: "stort_soverom"
+    heater: switch.panelovn_stort_soverom
+    target_sensor: sensor.stort_soverom_sensor_temperature
+    min_temp: 16
+    max_temp: 24
+    target_temp: 20
+    target_temp_step: 0.5
+    initial_hvac_mode: "heat"
+
+  - platform: generic_thermostat
+    name: Mellom soverom
+    unique_id: "mellom_soverom"
+    heater: switch.panelovn_mellom_soverom
+    target_sensor: sensor.mellom_soverom_sensor_temperature
+    min_temp: 16
+    max_temp: 24
+    target_temp: 20
+    target_temp_step: 0.5
+    initial_hvac_mode: "heat"
+
+  - platform: generic_thermostat
+    name: Litet soverom
+    unique_id: "litet_soverom"
+    heater: switch.panelovn_litet_soverom
+    target_sensor: sensor.litet_soverom_sensor_temperature
+    min_temp: 16
+    max_temp: 24
+    target_temp: 20
+    target_temp_step: 0.5
+    initial_hvac_mode: "heat"

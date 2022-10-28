@@ -18,7 +18,7 @@ def kortvegg_open():
     cover.open_cover(entity_id='cover.screen_kortvegg')
 
 
-@time_trigger("once(08:30)", "once(22:30)")
+@time_trigger("once(08:30)", "once(22:00)")
 @state_active("cover.garage_port == 'open'")
 def garage_port_close():
     cover.close_cover(entity_id='cover.garage_port')

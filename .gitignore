@@ -7,6 +7,7 @@ custom_components/
 deps/
 tts/
 www/
+image/
 
 *.py[cod]
 .HA_VERSION
