@@ -2,3 +2,8 @@ allow_all_imports: true
 hass_is_global: true
 
 apps:
+
+global:
+  magicmirror_apikey: !secret magicmirror_apikey
+  magicmirror_url: !secret magicmirror_url
+  longlived_access_token: !secret longlived_access_token

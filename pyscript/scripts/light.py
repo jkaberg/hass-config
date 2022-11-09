@@ -21,13 +21,8 @@ def _get_light_devices():
 
 # Soloppgang eller ingen hjemme (alle lys av)
 @time_trigger("once(sunrise + 20m)")
-@state_trigger("group.someone_home == 'not_home'", state_hold=30)
+@state_trigger("group.someone_home == 'not_home'", state_hold=300)
 def sunrise_or_nobody_home():
-    """ 
-        Turns of all lights 1h after sunrise or
-        when nobody home.
-    """
-
     lights = _get_light_devices()
 
     # zigbee group/scene
@@ -36,7 +31,7 @@ def sunrise_or_nobody_home():
     switch.turn_off(entity_id="switch.all_lights")
 
     # happy wife, happy life
-    if device_tracker.iphone_2 == 'home':
+    if person.marte == 'home':
         lights.get('zwave_js').remove('light.taklys_kontor')
 
     # z-wave multicast shut down all lights
@@ -57,14 +52,6 @@ def morning_sunset_light():
                   transition=20)
     switch.turn_on(entity_id="switch.night_lights")
 
-#    zwave_devices = ['light.taklys_trapp',
-#                     'light.taklys_inngang',
-#                     'light.taklys_bad_1_etg']
-
-#    zwave_js.multicast_set_value(entity_id=zwave_devices,
-#                                 command_class='38',
-#                                 property='targetValue',
-#                                 value=10)
 
 # Nattbelysning
 @time_trigger("once(22:30)")
@@ -74,6 +61,8 @@ def night_light():
 
     light.turn_off(entity_id="light.sunset_sunrise_lights",
                    transition=20)
+
+    lights.get('zwave_js').remove('light.taklys_litet_soverom')
 
     # z-wave multicast shut down all lights
     zwave_js.multicast_set_value(entity_id=lights.get('zwave_js'),

@@ -6,24 +6,20 @@ def reload_priceanalyzer():
 
 @state_trigger("input_boolean.away_mode")
 def away_mode(value=None):
-    inactive = False
+    away = True if value == 'on' else False
 
-    if value == 'on':
-        inactive = True
+    boiler(inactive=away)
+    heating(inactive=away)
 
-    boiler(inactive)
-    heating(inactive)
-
-@state_trigger("sensor.accumulated_energy_hourly2_peak",
-               "sensor.accumulated_energy_hourly2_offpeak")
+@state_trigger("sensor.nygardsvegen_6_forbruk")
 @state_active("input_boolean.away_mode == 'off'")
 def power_tariff(value=None):
     value = float(value)
-    temp = 0 if not pyscript.PWR_CTRL else float(pyscript.PWR_CTRL)
 
     def check(n, v=value):
-        if v > n and not n == temp:
-            temp = n
+        #log.error(f"n: {n} | v: {v} | temp: {pyscript.PWR_CTRL}")
+        if v > n and not n == float(pyscript.PWR_CTRL):
+            pyscript.PWR_CTRL = n
             return True
         return False
 
@@ -34,9 +30,7 @@ def power_tariff(value=None):
     elif check(8.5):
         ev_charger(inactive=True)
     elif value == 0:
-        temp = 0
-
-    pyscript.PWR_CTRL = temp
+        pyscript.PWR_CTRL = 0
 
 @time_trigger("cron(0 * * * *)")
 @state_active("input_boolean.away_mode == 'off'")
@@ -51,15 +45,17 @@ def boiler(inactive=False):
 @time_trigger("cron(0 * * * *)")
 @state_active("input_boolean.away_mode == 'off'")
 def ev_charger(inactive=False):
-    current = int(input_select.current_easee_charger) if 'on' in [binary_sensor.priceanalyzer_is_ten_cheapest, input_boolean.force_evcharge] and not inactive else 0
+    current = int(input_select.current_easee_charger) \
+        if 'on' in [binary_sensor.priceanalyzer_is_ten_cheapest, input_boolean.force_evcharge] \
+        and not inactive else 0
 
     easee.set_charger_max_limit(charger_id='EHCQPVGQ',
                                 current=current)
 
 @time_trigger("cron(0 * * * *)")
 @state_active("input_boolean.away_mode == 'off'")
-def heating(inactive=False, heating_adjust=2):
-    value = -abs(heating_adjust) if inactive else float(sensor.priceanalyzer_tr_heim_2)
+def heating(inactive=False, away_temp_adjust=4):
+    value = -abs(away_temp_adjust) if inactive else float(sensor.priceanalyzer_tr_heim_2)
 
     BATHROOM = 25
     BEDROOM = 20
@@ -74,7 +70,7 @@ def heating(inactive=False, heating_adjust=2):
                'climate.litet_soverom': BEDROOM,
                'climate.gulvvarme_bad_1_etg': BATHROOM,
                'climate.gulvvarme_bad_2_etg': BATHROOM,
-               'climate.panasonic_ac': LIVINGROOM,
+               'climate.panasonic_ac': BEDROOM,
                'climate.gulvvarme_stue': FLOOR_HEATING,
                'climate.gulvvarme_kjokken': FLOOR_HEATING,
                'climate.gulvvarme_tv_stue': FLOOR_HEATING,

@@ -1,7 +1,7 @@
 someone_home:
   entities:
     - device_tracker.sm_s901b
-    - device_tracker.iphone_2
+    - device_tracker.iphone
 
 tts_enheter:
   entities:
