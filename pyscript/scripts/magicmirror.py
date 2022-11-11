@@ -1,7 +1,7 @@
 import requests
 from datetime import datetime
 
-@state_trigger("media_player.magicmirror.app_name != 'DashCast'", \
+@state_trigger("media_player.magicmirror.app_name != 'DashCast'",
                "media_player.magicmirror == 'off'")
 @state_active("media_player.magicmirror != 'unavailable'")
 def cast_magicmirror():
