@@ -42,15 +42,26 @@ def sunrise_or_nobody_home():
  
 
 # Kveld- og morgenbelysning
-@time_trigger("once(05:30)", "once(sunset - 20m)")
+@time_trigger("once(05:30)", "once(06:00)", "once(sunset - 20m)")
 @state_trigger("group.someone_home == 'home'")
 @state_active("group.someone_home == 'home'")
 @time_active("range(05:30, sunrise + 30m)", "range(sunset - 20m, 22:00)")
-def morning_sunset_light():
+def morning_sunset_light(trigger_time=None):
     light.turn_on(entity_id="light.sunset_sunrise_lights", 
                   brightness=20,
                   transition=20)
     switch.turn_on(entity_id="switch.night_lights")
+    
+    if trigger_time:
+        if not trigger_time.now().hour == 5:
+            lights = ['light.taklys_kjokken',
+                      'light.taklys_trapp',
+                      'light.taklys_inngang']
+
+            zwave_js.multicast_set_value(entity_id=lights,
+                                         command_class='38',
+                                         property='targetValue',
+                                         value=10)
 
 
 # Nattbelysning
@@ -62,7 +73,9 @@ def night_light():
     light.turn_off(entity_id="light.sunset_sunrise_lights",
                    transition=20)
 
-    lights.get('zwave_js').remove('light.taklys_litet_soverom')
+    # markus rom
+    if group.someone_home == 'home':
+        lights.get('zwave_js').remove('light.taklys_litet_soverom')
 
     # z-wave multicast shut down all lights
     zwave_js.multicast_set_value(entity_id=lights.get('zwave_js'),

@@ -22,6 +22,10 @@ http:
   ip_ban_enabled: true
   login_attempts_threshold: 3
 
+logger:
+  logs:
+    custom_components.pyscript.scripts: debug
+
 homeassistant:
   customize_glob: !include customize.yaml
    
