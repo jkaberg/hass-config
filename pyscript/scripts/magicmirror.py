@@ -23,6 +23,4 @@ def motion(value=None):
 
     brightness = 100 if value == 'on' else 0
 
-    log.debug(f"setting brightness to {brightness}")
-
     set_brightness(brightness)

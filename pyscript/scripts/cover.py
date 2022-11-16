@@ -1,9 +1,10 @@
 # ta ned etter 1 min
-@state_trigger("int(sensor.utendor_bevegelse_sensor_illuminance_lux) > 13000", state_hold=30)
-@state_active("cover.screen_kortvegg == 'open' \
-               and float(sensor.azimuth) in range(157, 255) \
+@state_trigger("int(sensor.utendor_bevegelse_sensor_illuminance_lux) > 13000 \
+               and float(sensor.azimuth) > 157 \
+               and float(sensor.azimuth) < 255 \
                and int(sensor.panasonic_ac_outside_temperature) > 2 \
-               and float(sensor.vaerstasjon_velocity) < 20")
+               and float(sensor.vaerstasjon_velocity) < 20", state_hold=30)
+@state_active("cover.screen_kortvegg == 'open'")
 def kortvegg_close():
     cover.close_cover(entity_id='cover.screen_kortvegg')
 

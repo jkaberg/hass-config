@@ -17,8 +17,7 @@ def power_tariff(value=None):
     value = float(value)
 
     def check(n, v=value):
-        #log.error(f"n: {n} | v: {v} | temp: {pyscript.PWR_CTRL}")
-        if v > n and not n == float(pyscript.PWR_CTRL):
+        if v > n and v > float(pyscript.PWR_CTRL):
             pyscript.PWR_CTRL = n
             return True
         return False
@@ -70,7 +69,7 @@ def heating(inactive=False, away_temp_adjust=4):
                'climate.litet_soverom': BEDROOM,
                'climate.gulvvarme_bad_1_etg': BATHROOM,
                'climate.gulvvarme_bad_2_etg': BATHROOM,
-               'climate.panasonic_ac': BEDROOM,
+               'climate.panasonic_ac': LIVINGROOM,
                'climate.gulvvarme_stue': FLOOR_HEATING,
                'climate.gulvvarme_kjokken': FLOOR_HEATING,
                'climate.gulvvarme_tv_stue': FLOOR_HEATING,

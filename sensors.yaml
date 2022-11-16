@@ -29,7 +29,7 @@
       friendly_name: "VVB temperatur justert"
       icon_template: mdi:coolant-temperature
       unit_of_measurement: '°C'
-      value_template: "{{ (states('sensor.vaskerom_vvb_air_temperature_2') | float(0) + 19.0) }}"
+      value_template: "{{ (states('sensor.vaskerom_vvb_air_temperature_2') | float(0) + 24.5) }}"
     vaskerom_vvb_watt_corrected:
       unit_of_measurement: 'W'
       friendly_name: 'VVB effekt justert'  
