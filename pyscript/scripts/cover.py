@@ -11,6 +11,7 @@ def kortvegg_close():
 # ta opp etter 15 min
 @state_trigger("int(sensor.utendor_bevegelse_sensor_illuminance_lux) < 13000",
                "float(sensor.vaerstasjon_velocity) > 20",
+               "int(sensor.panasonic_ac_outside_temperature) < 2",
                state_hold=900)
 @state_active("cover.screen_kortvegg == 'closed'")
 def kortvegg_open():

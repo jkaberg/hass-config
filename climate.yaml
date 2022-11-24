@@ -1,13 +1,13 @@
-  - platform: generic_thermostat
-    name: Varmtvannsbereder
-    unique_id: "varmtvannsbereder"
-    heater: switch.vaskerom_vvb
-    target_sensor: sensor.vaskerom_vvb_temp_corrected
-    min_temp: 50
-    max_temp: 90
-    target_temp: 65
-    target_temp_step: 1
-    initial_hvac_mode: "heat"
+#  - platform: generic_thermostat
+#    name: Varmtvannsbereder
+#    unique_id: "varmtvannsbereder"
+#    heater: switch.vaskerom_vvb
+#    target_sensor: sensor.vaskerom_vvb_temp_corrected
+#    min_temp: 50
+#    max_temp: 90
+#    target_temp: 65
+#    target_temp_step: 1
+#    initial_hvac_mode: "heat"
 
   - platform: generic_thermostat
     name: Stort soverom

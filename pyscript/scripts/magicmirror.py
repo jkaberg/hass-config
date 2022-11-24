@@ -1,13 +1,13 @@
 import requests
 from datetime import datetime
 
-@state_trigger("media_player.magicmirror.app_name != 'DashCast'",
-               "media_player.magicmirror == 'off'")
-#@state_active("media_player.magicmirror != 'unavailable'")
+@state_trigger("media_player.magicmirror")
+@time_trigger("cron(*/5 * * * *)")
 def cast():
     url = pyscript.config.get('global').get('magicmirror_url')
 
-    dash_cast.load_url(entity_id='media_player.magicmirror', url=url, force=True)
+    if media_player.magicmirror.app_name != 'DashCast':
+        dash_cast.load_url(entity_id='media_player.magicmirror', url=url, force=True)
 
 @state_trigger("binary_sensor.gang_pir_sensor_occupancy")
 @time_active("range(06:00, 22:30)")

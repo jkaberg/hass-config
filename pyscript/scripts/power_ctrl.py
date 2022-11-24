@@ -34,10 +34,10 @@ def power_tariff(value=None):
 @time_trigger("cron(0 * * * *)")
 @state_active("input_boolean.away_mode == 'off'")
 def boiler(inactive=False):
-    temp = 55 if inactive else int(sensor.vvbsensor_tr_heim)
-
-    climate.set_temperature(entity_id='climate.varmtvannsbereder',
-                            temperature=temp)
+    if 'on' in [binary_sensor.priceanalyzer_is_five_cheapest] and not inactive:
+      switch.turn_on(entity_id='switch.vaskerom_vvb')
+    else:
+      switch.turn_off(entity_id='switch.vaskerom_vvb')
 
 @state_trigger("input_boolean.force_evcharge",
                "input_select.current_easee_charger")
@@ -45,7 +45,7 @@ def boiler(inactive=False):
 @state_active("input_boolean.away_mode == 'off'")
 def ev_charger(inactive=False):
     current = int(input_select.current_easee_charger) \
-        if 'on' in [binary_sensor.priceanalyzer_is_ten_cheapest, input_boolean.force_evcharge] \
+        if 'on' in [binary_sensor.priceanalyzer_is_five_cheapest] \
         and not inactive else 0
 
     easee.set_charger_max_limit(charger_id='EHCQPVGQ',
@@ -59,7 +59,7 @@ def heating(inactive=False, away_temp_adjust=4):
     BATHROOM = 25
     BEDROOM = 20
     LIVINGROOM = 21
-    FLOOR_HEATING = 22
+    FLOOR_HEATING = 23
 
     # climate entity: setpoint
     heaters = {'climate.panelovn_inngang': LIVINGROOM,
@@ -70,6 +70,7 @@ def heating(inactive=False, away_temp_adjust=4):
                'climate.gulvvarme_bad_1_etg': BATHROOM,
                'climate.gulvvarme_bad_2_etg': BATHROOM,
                'climate.panasonic_ac': LIVINGROOM,
+               'climate.gulvvarme_inngang': FLOOR_HEATING,
                'climate.gulvvarme_stue': FLOOR_HEATING,
                'climate.gulvvarme_kjokken': FLOOR_HEATING,
                'climate.gulvvarme_tv_stue': FLOOR_HEATING,

@@ -42,7 +42,7 @@ def sunrise_or_nobody_home():
  
 
 # Kveld- og morgenbelysning
-@time_trigger("once(05:30)", "once(06:00)", "once(sunset - 20m)")
+@time_trigger("once(05:30)", "once(sunset - 20m)")
 @state_trigger("group.someone_home == 'home'")
 @state_active("group.someone_home == 'home'")
 @time_active("range(05:30, sunrise + 30m)", "range(sunset - 20m, 22:00)")
@@ -51,18 +51,6 @@ def morning_sunset_light(trigger_time=None):
                   brightness=20,
                   transition=20)
     switch.turn_on(entity_id="switch.night_lights")
-    
-    if trigger_time:
-        if not trigger_time.now().hour == 5:
-            lights = ['light.taklys_kjokken',
-                      'light.taklys_trapp',
-                      'light.taklys_inngang']
-
-            zwave_js.multicast_set_value(entity_id=lights,
-                                         command_class='38',
-                                         property='targetValue',
-                                         value=10)
-
 
 # Nattbelysning
 @time_trigger("once(22:30)")
@@ -87,12 +75,11 @@ def night_light():
 # Outdoor lights #
 ##################
 
-@time_trigger("once(sunrise)")
-@state_active("switch.utelys == 'on'")
-def outdoor_light_off():
-    switch.turn_off(entity_id="switch.utelys")
+@time_trigger("once(sunrise)", "once(sunset)")
+def outdoor_light():
+    utelys = ['switch.utelys', 'switch.localtuya_socket01_2']
 
-@time_trigger("once(sunset)")
-@state_active("switch.utelys == 'off'")
-def outdoor_light_on():
-    switch.turn_on(entity_id="switch.utelys")
+    if switch.utelys == 'off':
+        switch.turn_on(entity_id=utelys)
+    else:
+        switch.turn_off(entity_id=utelys)
