@@ -24,7 +24,9 @@ http:
 
 logger:
   logs:
+    homeassistant.components.mqtt.light.schema_json: error
     custom_components.pyscript.scripts: debug
+    custom_components.localtuya.common: fatal
 
 homeassistant:
   customize_glob: !include customize.yaml

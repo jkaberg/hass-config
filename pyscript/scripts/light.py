@@ -47,10 +47,12 @@ def sunrise_or_nobody_home():
 @state_active("group.someone_home == 'home'")
 @time_active("range(05:30, sunrise + 30m)", "range(sunset - 20m, 22:00)")
 def morning_sunset_light(trigger_time=None):
+    switches = ['switch.sunset_sunrise_lights', 'switch.night_lights']
+
     light.turn_on(entity_id="light.sunset_sunrise_lights", 
                   brightness=20,
                   transition=20)
-    switch.turn_on(entity_id="switch.night_lights")
+    switch.turn_on(entity_id=switches)
 
 # Nattbelysning
 @time_trigger("once(22:30)")
@@ -60,6 +62,8 @@ def night_light():
 
     light.turn_off(entity_id="light.sunset_sunrise_lights",
                    transition=20)
+
+    switch.turn_off(entity_id="switch.sunset_sunrise_lights")
 
     # markus rom
     if group.someone_home == 'home':
@@ -75,11 +79,15 @@ def night_light():
 # Outdoor lights #
 ##################
 
-@time_trigger("once(sunrise)", "once(sunset)")
-def outdoor_light():
+@time_trigger("once(sunrise)")
+def outdoor_light_sunrise():
+    utelys = ['switch.utelys', 'switch.localtuya_socket01_2']
+    
+    switch.turn_off(entity_id=utelys)
+
+
+@time_trigger("once(sunset)")
+def outdoor_light_sunset():
     utelys = ['switch.utelys', 'switch.localtuya_socket01_2']
 
-    if switch.utelys == 'off':
-        switch.turn_on(entity_id=utelys)
-    else:
-        switch.turn_off(entity_id=utelys)
+    switch.turn_on(entity_id=utelys)

@@ -31,26 +31,30 @@ def power_tariff(value=None):
     elif value == 0:
         pyscript.PWR_CTRL = 0
 
+@state_trigger("binary_sensor.priceanalyzer_is_five_cheapest")
 @time_trigger("cron(0 * * * *)")
 @state_active("input_boolean.away_mode == 'off'")
 def boiler(inactive=False):
-    if 'on' in [binary_sensor.priceanalyzer_is_five_cheapest] and not inactive:
+    if binary_sensor.priceanalyzer_is_five_cheapest == 'on' and not inactive:
       switch.turn_on(entity_id='switch.vaskerom_vvb')
     else:
       switch.turn_off(entity_id='switch.vaskerom_vvb')
 
-@state_trigger("input_boolean.force_evcharge",
+@state_trigger("binary_sensor.priceanalyzer_is_ten_cheapest",
+               "input_boolean.force_evcharge",
                "input_select.current_easee_charger")
 @time_trigger("cron(0 * * * *)")
 @state_active("input_boolean.away_mode == 'off'")
 def ev_charger(inactive=False):
-    current = int(input_select.current_easee_charger) \
-        if 'on' in [binary_sensor.priceanalyzer_is_five_cheapest] \
-        and not inactive else 0
+    if 'on' in [input_boolean.force_evcharge, binary_sensor.priceanalyzer_is_ten_cheapest] and not inactive:
+        current = int(input_select.current_easee_charger)
+    else:
+        current = 0
 
     easee.set_charger_max_limit(charger_id='EHCQPVGQ',
                                 current=current)
 
+@state_trigger("sensor.priceanalyzer_tr_heim_2")
 @time_trigger("cron(0 * * * *)")
 @state_active("input_boolean.away_mode == 'off'")
 def heating(inactive=False, away_temp_adjust=4):
@@ -62,8 +66,8 @@ def heating(inactive=False, away_temp_adjust=4):
     FLOOR_HEATING = 23
 
     # climate entity: setpoint
-    heaters = {'climate.panelovn_inngang': LIVINGROOM,
-               'climate.panelovn_hovedsoverom': 18,
+    heaters = {'climate.inngang': LIVINGROOM,
+               'climate.hovedsoverom': 18,
                'climate.stort_soverom': BEDROOM,
                'climate.mellom_soverom': BEDROOM,
                'climate.litet_soverom': BEDROOM,

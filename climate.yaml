@@ -41,3 +41,25 @@
     target_temp: 20
     target_temp_step: 0.5
     initial_hvac_mode: "heat"
+
+  - platform: generic_thermostat
+    name: Hovedsoverom
+    unique_id: "hovedsoverom"
+    heater: switch.panelovn_hovedsoverom
+    target_sensor: sensor.hovedsoverom_sensor_temperature
+    min_temp: 16
+    max_temp: 24
+    target_temp: 18
+    target_temp_step: 0.5
+    initial_hvac_mode: "heat"
+
+  - platform: generic_thermostat
+    name: Inngang
+    unique_id: "inngang"
+    heater: switch.panelovn_inngang
+    target_sensor: sensor.inngang_sensor_temperature
+    min_temp: 16
+    max_temp: 24
+    target_temp: 21
+    target_temp_step: 0.5
+    initial_hvac_mode: "heat"
