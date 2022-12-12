@@ -3,7 +3,6 @@ mqtt:
 energy:
 logbook:
 history:
-recorder:
 frontend:
 media_source:
 system_health:
@@ -23,11 +22,18 @@ http:
   login_attempts_threshold: 3
 
 logger:
+  default: warning
   logs:
+    homeassistant: info
     homeassistant.components.mqtt.light.schema_json: error
     custom_components.pyscript.scripts: debug
     custom_components.localtuya.common: fatal
-
+    
+recorder:
+  exclude:
+    entity_globs:
+      - pyscript.script*
+  
 homeassistant:
   customize_glob: !include customize.yaml
    

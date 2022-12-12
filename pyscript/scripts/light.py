@@ -20,7 +20,7 @@ def _get_light_devices():
     return lights
 
 # Soloppgang eller ingen hjemme (alle lys av)
-@time_trigger("once(sunrise + 20m)")
+@time_trigger("once(sunrise)")
 @state_trigger("group.someone_home == 'not_home'", state_hold=300)
 def sunrise_or_nobody_home():
     lights = _get_light_devices()
@@ -42,10 +42,10 @@ def sunrise_or_nobody_home():
  
 
 # Kveld- og morgenbelysning
-@time_trigger("once(05:30)", "once(sunset - 20m)")
+@time_trigger("once(05:30)", "once(sunset)")
 @state_trigger("group.someone_home == 'home'")
 @state_active("group.someone_home == 'home'")
-@time_active("range(05:30, sunrise + 30m)", "range(sunset - 20m, 22:00)")
+@time_active("range(05:30, sunrise)", "range(sunset, 22:00)")
 def morning_sunset_light(trigger_time=None):
     switches = ['switch.sunset_sunrise_lights', 'switch.night_lights']
 

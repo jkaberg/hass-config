@@ -22,11 +22,11 @@ def power_tariff(value=None):
             return True
         return False
 
-    if check(9.5):
+    if check(9.3):
         heating(inactive=True)
-    elif check(9):
-        boiler(inactive=True)
     elif check(8.5):
+        boiler(inactive=True)
+    elif check(8):
         ev_charger(inactive=True)
     elif value == 0:
         pyscript.PWR_CTRL = 0
