@@ -58,56 +58,61 @@ def calc_energy_price():
     cut_off_price = 0.7
     our_price = 0
     state_price = 0
-
-    tariff = 0.3626
-    if now_time.hour < 6 or now_time.hour > 22 or now_time.day in [5,6]:
-        tariff = 0.2839
+    avg_price = []
+    consumption = 0
 
     for usage in usage_data.get("sensor.nygardsvegen_6_forbruk"):
         start = usage.get('start')
         end = usage.get('end')
-        consumption = usage.get('state')
+        consumption += usage.get('state')
 
-        for data in price_data.get("sensor.priceanalyzer_current_price"):
-            price = float
-            try:
-                price = float(data.state)
-                previous_price_value = price
-            except ValueError: # unknown or no value
-                price = previous_price_value
+    for data in price_data.get("sensor.priceanalyzer_current_price"):
+        price = float
+        try:
+            price = float(data.state)
+            #log.debug(data.last_changed)
+            previous_price_value = price
+        except ValueError: # unknown or no value
+            price = previous_price_value
 
-            if start <= data.last_changed <= end:
-                if price >= cut_off_price:
-                    state_price += consumption * ((price * 0.9) - cut_off_price)
-                    our_price += consumption * (((price * 0.1) + cut_off_price) + tariff)
-                else:
-                    our_price += (consumption * price) + tariff
+        avg_price.append(price)
+
+    consumption = round(consumption, 2)
+    month_avg_price = round(sum(avg_price)/len(avg_price), 2)
+
+    if month_avg_price >= cut_off_price:
+        state_price = round(consumption * ((month_avg_price - cut_off_price) * 0.9), 2)
+        our_price = round(consumption * (((month_avg_price - cut_off_price) * 0.1) + cut_off_price), 2)
+    else:
+        our_price += consumption * (month_avg_price * 1.25)
+
+    log.debug(f"Snitt pris: {month_avg_price}NOK, Forbruk: {consumption}kWh, Strømstøtte: {state_price}NOK, Vår pris: {our_price}NOK")
 
     state.set('input_number.electricity_cost_state', value=state_price)
     state.set('input_number.electricity_cost', value=our_price)
 
 
-@state_trigger("sensor.gulvvarme_tv_stue_value_electric_consumed_4",
-               "sensor.panelovn_inngang_electric_production_kwh",
-               "sensor.gulvvarme_inngang_value_electric_consumed_4",
-               "sensor.vaskerom_vvb_consumption_kwh_corrected",
-               "sensor.panelovn_stort_soverom_electric_production_kwh",
-               "sensor.panelovn_hovedsoverom_electric_production_kwh",
-               "sensor.panelovn_mellom_soverom_electric_production_kwh",
-               "sensor.panelovn_litet_soverom_electric_production_kwh",
-               "sensor.gulvvarme_bad_1_etg_value_electric_consumed_4",
-               "sensor.gulvvarme_tv_stue_value_electric_consumed_4",
-               "sensor.gulvvarme_stue_electric_consumed_kwh_4",
-               "sensor.utelys_sor_electric_consumption_kwh",
-               "sensor.gulvvarme_kjokken_value_electric_consumed_4",
-               "sensor.vaskerom_vaskemaskin_energy",
-               "sensor.utelys_nord_electric_consumption_kwh",
-               "sensor.gulvvarme_bad_2_etg_value_electric_consumed_4",
-               "sensor.vaskerom_torketrommel_energy",
-               "sensor.vaskerom_avfukter_energy",
-               "sensor.panelovn_kontor_electric_production_kwh",
-               "sensor.kaffekoker_energy",
-               "sensor.kjokken_oppvaskmaskin_energy")
+#@state_trigger("sensor.gulvvarme_tv_stue_value_electric_consumed_4",
+#               "sensor.panelovn_inngang_electric_production_kwh",
+#               "sensor.gulvvarme_inngang_value_electric_consumed_4",
+#               "sensor.vaskerom_vvb_consumption_kwh_corrected",
+#               "sensor.panelovn_stort_soverom_electric_production_kwh",
+#               "sensor.panelovn_hovedsoverom_electric_production_kwh",
+#               "sensor.panelovn_mellom_soverom_electric_production_kwh",
+#               "sensor.panelovn_litet_soverom_electric_production_kwh",
+#               "sensor.gulvvarme_bad_1_etg_value_electric_consumed_4",
+#               "sensor.gulvvarme_tv_stue_value_electric_consumed_4",
+#               "sensor.gulvvarme_stue_electric_consumed_kwh_4",
+#               "sensor.utelys_sor_electric_consumption_kwh",
+#               "sensor.gulvvarme_kjokken_value_electric_consumed_4",
+#               "sensor.vaskerom_vaskemaskin_energy",
+#               "sensor.utelys_nord_electric_consumption_kwh",
+#               "sensor.gulvvarme_bad_2_etg_value_electric_consumed_4",
+#               "sensor.vaskerom_torketrommel_energy",
+#               "sensor.vaskerom_avfukter_energy",
+#               "sensor.panelovn_kontor_electric_production_kwh",
+#               "sensor.kaffekoker_energy",
+#               "sensor.kjokken_oppvaskmaskin_energy")
 def correct_bad_readings(var_name=None):
     start_time = datetime.now() - timedelta(hours=2)
     end_time = datetime.now()

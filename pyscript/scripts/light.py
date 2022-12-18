@@ -46,7 +46,7 @@ def sunrise_or_nobody_home():
 @state_trigger("group.someone_home == 'home'")
 @state_active("group.someone_home == 'home'")
 @time_active("range(05:30, sunrise)", "range(sunset, 22:00)")
-def morning_sunset_light(trigger_time=None):
+def morning_sunset_light():
     switches = ['switch.sunset_sunrise_lights', 'switch.night_lights']
 
     light.turn_on(entity_id="light.sunset_sunrise_lights", 
@@ -79,14 +79,14 @@ def night_light():
 # Outdoor lights #
 ##################
 
-@time_trigger("once(sunrise)")
+@time_trigger("once(sunrise + 1m)")
 def outdoor_light_sunrise():
     utelys = ['switch.utelys', 'switch.localtuya_socket01_2']
     
     switch.turn_off(entity_id=utelys)
 
 
-@time_trigger("once(sunset)")
+@time_trigger("once(sunset - 1m)")
 def outdoor_light_sunset():
     utelys = ['switch.utelys', 'switch.localtuya_socket01_2']
 
