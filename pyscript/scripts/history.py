@@ -92,35 +92,34 @@ def calc_energy_price():
     state.set('input_number.electricity_cost', value=our_price)
 
 
-#@state_trigger("sensor.gulvvarme_tv_stue_value_electric_consumed_4",
-#               "sensor.panelovn_inngang_electric_production_kwh",
-#               "sensor.gulvvarme_inngang_value_electric_consumed_4",
-#               "sensor.vaskerom_vvb_consumption_kwh_corrected",
-#               "sensor.panelovn_stort_soverom_electric_production_kwh",
-#               "sensor.panelovn_hovedsoverom_electric_production_kwh",
-#               "sensor.panelovn_mellom_soverom_electric_production_kwh",
-#               "sensor.panelovn_litet_soverom_electric_production_kwh",
-#               "sensor.gulvvarme_bad_1_etg_value_electric_consumed_4",
-#               "sensor.gulvvarme_tv_stue_value_electric_consumed_4",
-#               "sensor.gulvvarme_stue_electric_consumed_kwh_4",
-#               "sensor.utelys_sor_electric_consumption_kwh",
-#               "sensor.gulvvarme_kjokken_value_electric_consumed_4",
-#               "sensor.vaskerom_vaskemaskin_energy",
-#               "sensor.utelys_nord_electric_consumption_kwh",
-#               "sensor.gulvvarme_bad_2_etg_value_electric_consumed_4",
-#               "sensor.vaskerom_torketrommel_energy",
-#               "sensor.vaskerom_avfukter_energy",
-#               "sensor.panelovn_kontor_electric_production_kwh",
-#               "sensor.kaffekoker_energy",
-#               "sensor.kjokken_oppvaskmaskin_energy")
+@state_trigger("sensor.gulvvarme_tv_stue_value_electric_consumed_4",
+               "sensor.panelovn_inngang_electric_production_kwh",
+               "sensor.gulvvarme_inngang_value_electric_consumed_4",
+               "sensor.vaskerom_vvb_consumption_kwh_corrected",
+               "sensor.panelovn_stort_soverom_electric_production_kwh",
+               "sensor.panelovn_hovedsoverom_electric_production_kwh",
+               "sensor.panelovn_mellom_soverom_electric_production_kwh",
+               "sensor.panelovn_litet_soverom_electric_production_kwh",
+               "sensor.gulvvarme_bad_1_etg_value_electric_consumed_4",
+               "sensor.gulvvarme_tv_stue_value_electric_consumed_4",
+               "sensor.gulvvarme_stue_electric_consumed_kwh_4",
+               "sensor.utelys_sor_electric_consumption_kwh",
+               "sensor.gulvvarme_kjokken_value_electric_consumed_4",
+               "sensor.vaskerom_vaskemaskin_energy",
+               "sensor.utelys_nord_electric_consumption_kwh",
+               "sensor.gulvvarme_bad_2_etg_value_electric_consumed_4",
+               "sensor.vaskerom_torketrommel_energy",
+               "sensor.vaskerom_avfukter_energy",
+               "sensor.panelovn_kontor_electric_production_kwh",
+               "sensor.kaffekoker_energy",
+               "sensor.kjokken_oppvaskmaskin_energy")
 def correct_bad_readings(var_name=None):
-    start_time = datetime.now() - timedelta(hours=2)
+    start_time = datetime.now() - timedelta(minutes=20)
     end_time = datetime.now()
 
     stats = _get_statistic(start_time, end_time, [var_name], "5minute", 'state')
     unit = state.getattr(var_name).get('unit_of_measurement')
     previous = None
-    threshold = 5 # better way to calc this? maybe n * previous?
 
     for d in stats.get(var_name):
         state = float(d.get('state'))
@@ -131,8 +130,8 @@ def correct_bad_readings(var_name=None):
 
         delta = abs(state - previous)
 
-        if delta >= threshold:
-            log.debug(f"Delta to high for {var_name} | State: {state}, Previous state: {previous}, Delta: {delta}, Threshold: {threshold}")
+        if delta >= (previous * 5):
+            log.debug(f"Delta to high for {var_name} | State: {state}, Previous state: {previous}, Delta: {delta}")
             hass.data["recorder_instance"].async_adjust_statistics(statistic_id=var_name,
                                                                    start_time=d.get('start'),
                                                                    sum_adjustment=previous,
