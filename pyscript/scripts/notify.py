@@ -1,5 +1,7 @@
 from homeassistant.helpers import entity_registry, device_registry
 
+decorated_functions = {}
+
 def _get_pretty_name(ent):
     ent_reg = entity_registry.async_get(hass)
     entity = ent_reg.async_get(ent)
@@ -76,16 +78,20 @@ def notify_machines_compelete(value=None, var_name=None):
             _notify(msg=f"{name} er ferdig!", speak=True)
 
 
-@time_trigger("once(19:30:00)")
-def check_batteries(min_perc=20):
-    notify = {}
+@time_trigger("startup")
+#@time_trigger("cron(*/1 * * * *)")
+def check_batteries():
+    global decorated_functions
+
     blacklist = ['sensor.lenovo_tb_x505f_battery_level', 
                  'sensor.vaerstasjon_battery_level',
                  'sensor.iphone_battery_level',
                  'sensor.sm_s901b_battery_level',
                  'sensor.0x0015bc003100d36f_battery',
                  'sensor.denne_ok_battery']
+
     sensors = state.names("sensor")
+    battery_devices = []
 
     for sensor in sensors:
         if sensor in blacklist:
@@ -93,23 +99,18 @@ def check_batteries(min_perc=20):
 
         device_class = state.getattr(sensor).get('device_class')
         if device_class == "battery":
-            try:
-                battery_level = float(state.get(sensor))
-
-                if battery_level <= min_perc:
-                    notify[sensor] = battery_level
-            except ValueError: # some battery_level values cannot be cast to float, eg 'unavailable' and 'unknown'
-                notify[sensor] = 0.0
+            battery_devices.append(sensor)
             
-    if notify:
-        notify_devices = f""
-        for device, battery_level in notify.items():
-            #device = _get_pretty_name(device)
-            if not notify_devices:
-                notify_devices = f"{device} ({battery_level}%)"
-            else:
-                notify_devices = f"{notify_devices}, {device} ({battery_level}%)"
+            @state_trigger(f"float({sensor}) < 20",
+                           f"{sensor} == 'unavailable'",
+                           f"{sensor} == 'unknown'")
+            def battery_checker(value=None, var_name=None):
+                _notify(f"Lavt batteri på: {var_name} ({value}%)", title = "Lavt batteri")
 
-        msg = f"Lavt batteri på: {notify_devices}"
+            decorated_functions[sensor] = battery_checker
 
-        _notify(msg, title = "Lavt batteri")
+    for sensor in list(decorated_functions.keys()):
+        if sensor not in battery_devices:
+            state_trigger.remove_listener(sensor)
+            del decorated_functions[sensor]
+
