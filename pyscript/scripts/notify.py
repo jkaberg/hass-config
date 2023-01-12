@@ -94,11 +94,9 @@ def check_batteries():
     battery_devices = []
 
     for sensor in sensors:
-        if sensor in blacklist:
-            continue
+        if sensor in blacklist: continue
 
-        device_class = state.getattr(sensor).get('device_class')
-        if device_class == "battery":
+        if state.getattr(sensor).get('device_class') == "battery":
             battery_devices.append(sensor)
             
             @state_trigger(f"float({sensor}) < 20",

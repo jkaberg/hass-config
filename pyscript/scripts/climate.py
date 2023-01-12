@@ -1,8 +1,8 @@
 from datetime import datetime
 
-@state_trigger("climate.panasonic_ac == 'heat_cool'")
+@state_trigger("climate.panasonic_ac_3 == 'heat_cool'")
 def heatpump_use_heat():
-    climate.set_hvac_mode(entity_id='climate.panasonic_ac',
+    climate.set_hvac_mode(entity_id='climate.panasonic_ac_3',
                           hvac_mode='heat')
 
 @time_trigger("once(06:00)", "once(22:30)")
@@ -14,7 +14,7 @@ def heatpump_handle_noise():
     if datetime.now().hour == 22 or group.someone_home == 'not_home':
         preset_mode = 'Normal'
 
-    climate.set_preset_mode(entity_id='climate.panasonic_ac', preset_mode=preset_mode)
+    climate.set_preset_mode(entity_id='climate.panasonic_ac_3', preset_mode=preset_mode)
 
 @state_trigger("sensor.vaskerom_humidity")
 def handle_humidifier(value=None):

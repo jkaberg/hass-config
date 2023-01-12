@@ -73,7 +73,7 @@ def heating(inactive=False, away_temp_adjust=4):
                'climate.litet_soverom': BEDROOM,
                'climate.gulvvarme_bad_1_etg': BATHROOM,
                'climate.gulvvarme_bad_2_etg': BATHROOM,
-               'climate.panasonic_ac': LIVINGROOM,
+               'climate.panasonic_ac_3': LIVINGROOM,
                'climate.gulvvarme_inngang': FLOOR_HEATING,
                'climate.gulvvarme_stue': FLOOR_HEATING,
                'climate.gulvvarme_kjokken': FLOOR_HEATING,
