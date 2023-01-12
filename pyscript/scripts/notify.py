@@ -76,12 +76,21 @@ def notify_machines_compelete(value=None, var_name=None):
             _notify(msg=f"{name} er ferdig!", speak=True)
 
 
-@time_trigger("once(20:00:00)")
+@time_trigger("once(19:30:00)")
 def check_batteries(min_perc=20):
     notify = {}
+    blacklist = ['sensor.lenovo_tb_x505f_battery_level', 
+                 'sensor.vaerstasjon_battery_level',
+                 'sensor.iphone_battery_level',
+                 'sensor.sm_s901b_battery_level',
+                 'sensor.0x0015bc003100d36f_battery',
+                 'sensor.denne_ok_battery']
     sensors = state.names("sensor")
 
     for sensor in sensors:
+        if sensor in blacklist:
+            continue
+
         device_class = state.getattr(sensor).get('device_class')
         if device_class == "battery":
             try:
@@ -90,7 +99,7 @@ def check_batteries(min_perc=20):
                 if battery_level <= min_perc:
                     notify[sensor] = battery_level
             except ValueError: # some battery_level values cannot be cast to float, eg 'unavailable' and 'unknown'
-                continue
+                notify[sensor] = 0.0
             
     if notify:
         notify_devices = f""

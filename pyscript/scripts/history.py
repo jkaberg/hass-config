@@ -92,6 +92,14 @@ def calc_energy_price():
     state.set('input_number.electricity_cost', value=our_price)
 
 
+
+
+# erstatt nedenfor med dette?:
+# gir oss all enheter som brukes i energy fanen under konsumpsjon
+#    data = [k.get('stat_consumption') for k in hass.data['energy_manager'].data.get('device_consumption')]
+#
+#    for k in data:
+#        log.debug(k.get('stat_consumption'))
 @state_trigger("sensor.gulvvarme_tv_stue_value_electric_consumed_4",
                "sensor.panelovn_inngang_electric_production_kwh",
                "sensor.gulvvarme_inngang_value_electric_consumed_4",
@@ -130,10 +138,17 @@ def correct_bad_readings(var_name=None):
 
         delta = abs(state - previous)
 
-        if delta >= (previous * 5):
+        if delta >= (previous * 3):
             log.debug(f"Delta to high for {var_name} | State: {state}, Previous state: {previous}, Delta: {delta}")
             hass.data["recorder_instance"].async_adjust_statistics(statistic_id=var_name,
                                                                    start_time=d.get('start'),
                                                                    sum_adjustment=previous,
                                                                    adjustment_unit=unit)
         previous = state
+
+
+#@time_trigger("cron(*/1 * * * *)")
+def test_lol():
+    sensors = [k.get('stat_consumption') for k in hass.data['energy_manager'].data.get('device_consumption')]
+
+    log.debug(sensors)

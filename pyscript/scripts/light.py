@@ -19,49 +19,31 @@ def _get_light_devices():
     
     return lights
 
-# Soloppgang eller ingen hjemme (alle lys av)
-@time_trigger("once(sunrise)")
 @state_trigger("group.someone_home == 'not_home'", state_hold=300)
-def sunrise_or_nobody_home():
+def nobody_home():
     lights = _get_light_devices()
-
-    # zigbee group/scene
-    light.turn_off(entity_id="light.all_lights", 
-                   transition=20)
-    switch.turn_off(entity_id="switch.all_lights")
-
-    # happy wife, happy life
-    if person.marte == 'home':
-        lights.get('zwave_js').remove('light.taklys_kontor')
 
     # z-wave multicast shut down all lights
     zwave_js.multicast_set_value(entity_id=lights.get('zwave_js'),
-                                 command_class='38',
-                                 property='targetValue',
-                                 value=0)
- 
+                                command_class='38',
+                                property='targetValue',
+                                value=0)
 
-# Kveld- og morgenbelysning
+@time_trigger("once(sunrise)")
+def sunrise():
+    switch.turn_off(entity_id="switch.all_lights")
+
 @time_trigger("once(05:30)", "once(sunset)")
-@state_trigger("group.someone_home == 'home'")
-@state_active("group.someone_home == 'home'")
 @time_active("range(05:30, sunrise)", "range(sunset, 22:00)")
 def morning_sunset_light():
     switches = ['switch.sunset_sunrise_lights', 'switch.night_lights']
 
-    light.turn_on(entity_id="light.sunset_sunrise_lights", 
-                  brightness=20,
-                  transition=20)
     switch.turn_on(entity_id=switches)
 
 # Nattbelysning
 @time_trigger("once(22:30)")
-@state_active("group.someone_home == 'home'")
 def night_light():
     lights = _get_light_devices()
-
-    light.turn_off(entity_id="light.sunset_sunrise_lights",
-                   transition=20)
 
     switch.turn_off(entity_id="switch.sunset_sunrise_lights")
 

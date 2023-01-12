@@ -1,8 +1,8 @@
 state.persist("pyscript.PWR_CTRL", default_value=0)
 
-@time_trigger("once(14:30)", "once(21:00)")
-def reload_priceanalyzer():
-    homeassistant.reload_config_entry(entity_id='sensor.priceanalyzer_tr_heim_2')
+#@time_trigger("once(14:30)", "once(21:00)")
+#def reload_priceanalyzer():
+#    homeassistant.reload_config_entry(entity_id='sensor.priceanalyzer_tr_heim_2')
 
 @state_trigger("input_boolean.away_mode")
 def away_mode(value=None):
@@ -90,3 +90,6 @@ def heating(inactive=False, away_temp_adjust=4):
         except TypeError:
             # device unavilable or similar.
             pass
+
+
+# lag automasjon som finner effekttrinn 

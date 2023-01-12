@@ -39,6 +39,7 @@ homeassistant:
    
 google_assistant:
   project_id: g2hast
+  secure_devices_pin: "1234"
   service_account: !include google_service_account.json
   report_state: true
   expose_by_default: true
