@@ -5,6 +5,9 @@ from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.history import get_significant_states
 from homeassistant.components.recorder.statistics import statistics_during_period
 
+decorated_functions = {}
+
+
 async def _get_history(
     start_time: datetime,
     end_time: datetime | None,
@@ -92,63 +95,46 @@ def calc_energy_price():
     state.set('input_number.electricity_cost', value=our_price)
 
 
-
-
-# erstatt nedenfor med dette?:
-# gir oss all enheter som brukes i energy fanen under konsumpsjon
-#    data = [k.get('stat_consumption') for k in hass.data['energy_manager'].data.get('device_consumption')]
-#
-#    for k in data:
-#        log.debug(k.get('stat_consumption'))
-@state_trigger("sensor.gulvvarme_tv_stue_value_electric_consumed_4",
-               "sensor.panelovn_inngang_electric_production_kwh",
-               "sensor.gulvvarme_inngang_value_electric_consumed_4",
-               "sensor.vaskerom_vvb_consumption_kwh_corrected",
-               "sensor.panelovn_stort_soverom_electric_production_kwh",
-               "sensor.panelovn_hovedsoverom_electric_production_kwh",
-               "sensor.panelovn_mellom_soverom_electric_production_kwh",
-               "sensor.panelovn_litet_soverom_electric_production_kwh",
-               "sensor.gulvvarme_bad_1_etg_value_electric_consumed_4",
-               "sensor.gulvvarme_tv_stue_value_electric_consumed_4",
-               "sensor.gulvvarme_stue_electric_consumed_kwh_4",
-               "sensor.utelys_sor_electric_consumption_kwh",
-               "sensor.gulvvarme_kjokken_value_electric_consumed_4",
-               "sensor.vaskerom_vaskemaskin_energy",
-               "sensor.utelys_nord_electric_consumption_kwh",
-               "sensor.gulvvarme_bad_2_etg_value_electric_consumed_4",
-               "sensor.vaskerom_torketrommel_energy",
-               "sensor.vaskerom_avfukter_energy",
-               "sensor.panelovn_kontor_electric_production_kwh",
-               "sensor.kaffekoker_energy",
-               "sensor.kjokken_oppvaskmaskin_energy")
-def correct_bad_readings(var_name=None):
-    start_time = datetime.now() - timedelta(minutes=20)
-    end_time = datetime.now()
-
-    stats = _get_statistic(start_time, end_time, [var_name], "5minute", 'state')
-    unit = state.getattr(var_name).get('unit_of_measurement')
-    previous = None
-
-    for d in stats.get(var_name):
-        state = float(d.get('state'))
-
-        if previous is None:
-            previous = state
-            continue
-
-        delta = abs(state - previous)
-
-        if delta >= (previous * 3):
-            log.debug(f"Delta to high for {var_name} | State: {state}, Previous state: {previous}, Delta: {delta}")
-            hass.data["recorder_instance"].async_adjust_statistics(statistic_id=var_name,
-                                                                   start_time=d.get('start'),
-                                                                   sum_adjustment=previous,
-                                                                   adjustment_unit=unit)
-        previous = state
-
-
 #@time_trigger("cron(*/1 * * * *)")
-def test_lol():
+@time_trigger("startup")
+def correct_bad_readings():
+    global decorated_functions
+
+    # fetch all sensors listed in the energy dashboard
     sensors = [k.get('stat_consumption') for k in hass.data['energy_manager'].data.get('device_consumption')]
 
-    log.debug(sensors)
+    for sensor in sensors:
+        if sensor in decorated_functions:
+            continue
+
+        @state_trigger(f"{sensor}")
+        def corrector(var_name=None):
+            start_time = datetime.now() - timedelta(minutes=30)
+            end_time = datetime.now()
+
+            stats = _get_statistic(start_time, end_time, [var_name], "5minute", 'state')
+            unit = state.getattr(var_name).get('unit_of_measurement')
+            previous = None
+
+            for d in stats.get(var_name):
+                state = float(d.get('state'))
+
+                if previous is None:
+                    previous = state
+                    continue
+
+                delta = abs(state - previous)
+
+                if delta >= (previous * 3):
+                    log.debug(f"Delta to high for {var_name} | State: {state}, Previous state: {previous}, Delta: {delta}")
+                    hass.data["recorder_instance"].async_adjust_statistics(statistic_id=var_name,
+                                                                           start_time=d.get('start'),
+                                                                           sum_adjustment=previous,
+                                                                           adjustment_unit=unit)
+
+        decorated_functions[sensor] = corrector
+
+    for sensor in list(decorated_functions.keys()):
+        if sensor not in sensors:
+            state_trigger.remove_listener(sensor)
+            del decorated_functions[sensor]
