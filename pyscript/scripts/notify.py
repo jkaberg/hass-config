@@ -78,8 +78,8 @@ def notify_machines_compelete(value=None, var_name=None):
             _notify(msg=f"{name} er ferdig!", speak=True)
 
 
-@time_trigger("startup")
-#@time_trigger("cron(*/1 * * * *)")
+#@time_trigger("startup")
+@time_trigger("cron(*/1 * * * *)")
 def check_batteries():
     global decorated_functions
 

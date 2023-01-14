@@ -1,3 +1,4 @@
+charger_limit = 0
 state.persist("pyscript.PWR_CTRL", default_value=0)
 
 #@time_trigger("once(14:30)", "once(21:00)")
@@ -26,8 +27,8 @@ def power_tariff(value=None):
         heating(inactive=True)
     elif check(8.5):
         boiler(inactive=True)
-    elif check(8):
-        ev_charger(inactive=True)
+#    elif check(8):
+#        ev_charger(inactive=True)
     elif value == 0:
         pyscript.PWR_CTRL = 0
 
@@ -42,17 +43,31 @@ def boiler(inactive=False):
 
 @state_trigger("binary_sensor.priceanalyzer_is_ten_cheapest",
                "input_boolean.force_evcharge",
-               "input_select.current_easee_charger")
-@time_trigger("cron(0 * * * *)")
+               "sensor.estimated_hourly_consumption",
+               "input_select.energy_tariff")
+#@time_trigger("cron(0 * * * *)")
 @state_active("input_boolean.away_mode == 'off'")
 def ev_charger(inactive=False):
+    global charger_limit
+    limits = [0, 6, 10, 13, 16, 20, 25, 32]
+
     if 'on' in [input_boolean.force_evcharge, binary_sensor.priceanalyzer_is_ten_cheapest] and not inactive:
-        current = int(input_select.current_easee_charger)
+        consumption = float(sensor.estimated_hourly_consumption)
+        threshold = float(input_select.energy_tariff)
+        remaining_power = threshold - consumption + float(sensor.garasje_power)
+        remaining_current = (remaining_power * 1000) / 230
+        log.debug(f"est. consumption {consumption}, treshold {threshold}, r. power {remaining_power}, r. current {remaining_current}")
+        current = max([x for x in limits if x <= remaining_current])
+        log.debug(f"current {current}")
+        #current = int(input_select.current_easee_charger)
     else:
         current = 0
 
-    easee.set_charger_max_limit(charger_id='EHCQPVGQ',
-                                current=current)
+    if charger_limit != current: #avoid hammering the Easee api
+        log.debug(f"Adjusting charger limit to {current}A")
+        charger_limit = current
+        easee.set_charger_max_limit(charger_id='EHCQPVGQ',
+                                    current=current)
 
 @state_trigger("sensor.priceanalyzer_tr_heim_2")
 @time_trigger("cron(0 * * * *)")

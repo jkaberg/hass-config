@@ -54,6 +54,7 @@
       friendly_name: "Estimert Timeforbruk"
       unit_of_measurement: 'kWh'
       device_class: power
+#      value_template: "{{ (moving_average(states('sensor.nygardsvegen_6_forbruk'), window_size=5) + states('sensor.derivert_effekt') | float(0) * (3600 - now().minute * 60 - now().second) / 3600) | round(3) }}"
       value_template: "{{ (states('sensor.nygardsvegen_6_forbruk') | float(15) + states('sensor.derivert_effekt') | float(0) * (3600 - now().minute * 60 - now().second) / 3600) | round(3) }}"
 
 - platform: systemmonitor

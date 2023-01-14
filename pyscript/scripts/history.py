@@ -5,6 +5,7 @@ from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.history import get_significant_states
 from homeassistant.components.recorder.statistics import statistics_during_period
 
+
 decorated_functions = {}
 
 
@@ -95,46 +96,46 @@ def calc_energy_price():
     state.set('input_number.electricity_cost', value=our_price)
 
 
-#@time_trigger("cron(*/1 * * * *)")
 @time_trigger("startup")
-def correct_bad_readings():
+async def correct_bad_readings():
     global decorated_functions
+
+    decorated_functions = {}
 
     # fetch all sensors listed in the energy dashboard
     sensors = [k.get('stat_consumption') for k in hass.data['energy_manager'].data.get('device_consumption')]
 
     for sensor in sensors:
-        if sensor in decorated_functions:
-            continue
-
+        log.debug(f"Corrector setting up {sensor}")
         @state_trigger(f"{sensor}")
-        def corrector(var_name=None):
+        async def corrector(var_name=None, value=None):
+            log.debug(f"Corrector checking {var_name}")
+
             start_time = datetime.now() - timedelta(minutes=30)
             end_time = datetime.now()
 
             stats = _get_statistic(start_time, end_time, [var_name], "5minute", 'state')
             unit = state.getattr(var_name).get('unit_of_measurement')
-            previous = None
 
-            for d in stats.get(var_name):
-                state = float(d.get('state'))
+            stat = [{'start': d.get('start'), 'value': float(d.get('state'))} for d in stats.get(var_name)]
+            previous, last = stat[:-1], stat[-1]
+            previous_values = [v.get('value') for v in previous]
 
-                if previous is None:
-                    previous = state
-                    continue
+            average = sum(previous_values) / len(previous_values)
+            delta = abs(last.get('value') - average)
 
-                delta = abs(state - previous)
+            log.debug(f"Checking if delta ({delta}) is larger than avarage ({average})")
 
-                if delta >= (previous * 3):
-                    log.debug(f"Delta to high for {var_name} | State: {state}, Previous state: {previous}, Delta: {delta}")
-                    hass.data["recorder_instance"].async_adjust_statistics(statistic_id=var_name,
-                                                                           start_time=d.get('start'),
-                                                                           sum_adjustment=previous,
-                                                                           adjustment_unit=unit)
+            if delta > average:
+                log.debug(f"Delta to high for {var_name} | State: {last.get('value')}, Avarage value: {average}, Delta: {delta}")
+                hass.data["recorder_instance"].async_adjust_statistics(statistic_id=var_name,
+                                                                        start_time=last.get('start'),
+                                                                        sum_adjustment=average,
+                                                                        adjustment_unit=unit)
 
         decorated_functions[sensor] = corrector
 
+    # this isn't needed afaik? or can we listen to an event regarding the energy manager, then this would be nice.
     for sensor in list(decorated_functions.keys()):
         if sensor not in sensors:
-            state_trigger.remove_listener(sensor)
             del decorated_functions[sensor]
