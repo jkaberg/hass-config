@@ -50,12 +50,14 @@
       device_class: monetary
       unit_of_measurement: NOK/kWh
       value_template: "{{ state_attr('sensor.priceanalyzer_tr_heim_2', 'current_hour').value }}"
-    estimated_hourly_consumption:
-      friendly_name: "Estimert Timeforbruk"
-      unit_of_measurement: 'kWh'
-      device_class: power
-#      value_template: "{{ (moving_average(states('sensor.nygardsvegen_6_forbruk'), window_size=5) + states('sensor.derivert_effekt') | float(0) * (3600 - now().minute * 60 - now().second) / 3600) | round(3) }}"
-      value_template: "{{ (states('sensor.nygardsvegen_6_forbruk') | float(15) + states('sensor.derivert_effekt') | float(0) * (3600 - now().minute * 60 - now().second) / 3600) | round(3) }}"
+#    estimated_hourly_consumption:
+#      friendly_name: "Estimert Timeforbruk"
+#      unit_of_measurement: 'kWh'
+#      device_class: power
+#      value_template: >-
+#        {% set alpha = 0.6 %}
+#        {% set prev_val = states.sensor.estimated_hourly_consumption.last_changed.state | float %}
+#        {{ (prev_val * (1 - alpha)) + ((states('sensor.nygardsvegen_6_forbruk') | float(15) + states('sensor.derivert_effekt') | float(0) * (3600 - now().minute * 60 - now().second) / 3600) * alpha) | round(3) }}
 
 - platform: systemmonitor
   resources:

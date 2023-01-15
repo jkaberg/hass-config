@@ -1,38 +1,12 @@
-from typing import Literal
+import sys
 from datetime import datetime, timezone, timedelta
 
-from homeassistant.components.recorder import get_instance
-from homeassistant.components.recorder.history import get_significant_states
-from homeassistant.components.recorder.statistics import statistics_during_period
+if "/config/pyscript/modules" not in sys.path:
+    sys.path.append("/config/pyscript/modules")
 
+from history import _get_statistic, _get_history
 
 decorated_functions = {}
-
-
-async def _get_history(
-    start_time: datetime,
-    end_time: datetime | None,
-    entity_ids: list[str] | None):
-
-    start_time = start_time.astimezone(timezone.utc)
-    end_time = end_time.astimezone(timezone.utc)
-
-    return(await get_instance(hass).async_add_executor_job(get_significant_states, hass, start_time, end_time, entity_ids))
-
-#https://github.com/home-assistant/core/blob/dev/homeassistant/components/recorder/websocket_api.py#L137
-#https://github.com/home-assistant/core/blob/9cd159ee011d4c048aea8bd1e3285d7b1b764277/homeassistant/components/recorder/statistics.py#L1643
-async def _get_statistic(
-    start_time: datetime,
-    end_time: datetime | None,
-    statistic_ids: list[str] | None,
-    period: Literal["5minute", "day", "hour", "week", "month"],
-    types: set[Literal["last_reset", "max", "mean", "min", "state", "sum"]]):
-
-    start_time = start_time.astimezone(timezone.utc)
-    end_time = end_time.astimezone(timezone.utc)
-
-    return(await get_instance(hass).async_add_executor_job(statistics_during_period, hass, start_time, end_time, statistic_ids, period, None, types))
-
 
 @time_trigger("cron(0 * * * *)")
 def energy_get_top_3_month():

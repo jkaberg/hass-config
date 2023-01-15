@@ -1,9 +1,34 @@
-charger_limit = 0
-state.persist("pyscript.PWR_CTRL", default_value=0)
+import sys
+from datetime import datetime, timedelta, timezone
 
-#@time_trigger("once(14:30)", "once(21:00)")
-#def reload_priceanalyzer():
-#    homeassistant.reload_config_entry(entity_id='sensor.priceanalyzer_tr_heim_2')
+if "/config/pyscript/modules" not in sys.path:
+    sys.path.append("/config/pyscript/modules")
+
+from history import _get_statistic, _get_history
+
+state.persist("pyscript.PWR_CTRL", default_value=0)
+state.persist("pyscript.CHARGER_LIMIT", default_value=0)
+
+@state_trigger("sensor.strommaler_power")
+def estimated_power_consumption(value=None, var_name=None, window_size=5):
+    start_time = datetime.now(timezone.utc) - timedelta(minutes=window_size)
+    now_time = datetime.now(timezone.utc)
+
+    data = _get_history(start_time, now_time, [var_name])
+    watt_usage_history = [float(d.state) for d in data.get(var_name) if d.last_updated < datetime.now(timezone.utc)]
+    average_watt_usage = sum(watt_usage_history) / len(watt_usage_history)
+    minute = datetime.now(timezone.utc).minute
+    
+    if minute >= (60 - window_size):
+        current_time_remaining = (60 - minute + 60) * 60
+    else:
+        current_time_remaining = (60 - minute) * 60
+
+    current_time_remaining += (60 - datetime.now(timezone.utc).second)
+    estimated_remaining_usage = round(((average_watt_usage * current_time_remaining) / (60 * 60)) / 1000, 3)
+
+    log.debug(f"Estimated power consumption is {estimated_remaining_usage} kWh, based on values {watt_usage_history}")
+    state.set('sensor.estimated_hourly_consumption', estimated_remaining_usage)
 
 @state_trigger("input_boolean.away_mode")
 def away_mode(value=None):
@@ -48,7 +73,7 @@ def boiler(inactive=False):
 #@time_trigger("cron(0 * * * *)")
 @state_active("input_boolean.away_mode == 'off'")
 def ev_charger(inactive=False):
-    global charger_limit
+    charger_limit = float(pyscript.CHARGER_LIMIT)
     limits = [0, 6, 10, 13, 16, 20, 25, 32]
 
     if 'on' in [input_boolean.force_evcharge, binary_sensor.priceanalyzer_is_ten_cheapest] and not inactive:
@@ -56,16 +81,15 @@ def ev_charger(inactive=False):
         threshold = float(input_select.energy_tariff)
         remaining_power = threshold - consumption + float(sensor.garasje_power)
         remaining_current = (remaining_power * 1000) / 230
-        log.debug(f"est. consumption {consumption}, treshold {threshold}, r. power {remaining_power}, r. current {remaining_current}")
         current = max([x for x in limits if x <= remaining_current])
-        log.debug(f"current {current}")
+        #log.debug(f"est. consumption {consumption}, treshold {threshold}, r. power {remaining_power}, r. current {remaining_current}, current {current}")
         #current = int(input_select.current_easee_charger)
     else:
         current = 0
 
     if charger_limit != current: #avoid hammering the Easee api
-        log.debug(f"Adjusting charger limit to {current}A")
-        charger_limit = current
+        log.debug(f"Adjusting charger limit to {current}A, previously {charger_limit}A")
+        pyscript.CHARGER_LIMIT = charger_limit
         easee.set_charger_max_limit(charger_id='EHCQPVGQ',
                                     current=current)
 

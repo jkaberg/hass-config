@@ -78,10 +78,12 @@ def notify_machines_compelete(value=None, var_name=None):
             _notify(msg=f"{name} er ferdig!", speak=True)
 
 
-#@time_trigger("startup")
-@time_trigger("cron(*/1 * * * *)")
+@time_trigger("startup")
+#@time_trigger("cron(*/1 * * * *)")
 def check_batteries():
     global decorated_functions
+
+    decorated_functions = {}
 
     blacklist = ['sensor.lenovo_tb_x505f_battery_level', 
                  'sensor.vaerstasjon_battery_level',
@@ -98,6 +100,8 @@ def check_batteries():
 
         if state.getattr(sensor).get('device_class') == "battery":
             battery_devices.append(sensor)
+
+            log.debug(f"Setup battery notification for {sensor}")
             
             @state_trigger(f"float({sensor}) < 20",
                            f"{sensor} == 'unavailable'",
@@ -109,6 +113,5 @@ def check_batteries():
 
     for sensor in list(decorated_functions.keys()):
         if sensor not in battery_devices:
-            state_trigger.remove_listener(sensor)
             del decorated_functions[sensor]
 
