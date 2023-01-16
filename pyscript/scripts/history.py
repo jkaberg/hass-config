@@ -1,73 +1,71 @@
-import sys
 from datetime import datetime, timezone, timedelta
-
-if "/config/pyscript/modules" not in sys.path:
-    sys.path.append("/config/pyscript/modules")
 
 from history import _get_statistic, _get_history
 
 decorated_functions = {}
 
 @time_trigger("cron(0 * * * *)")
-def energy_get_top_3_month():
-    var_name="sensor.nygardsvegen_6_forbruk"
-
+def energy_top_3_month(var_name="sensor.nygardsvegen_6_forbruk"):
     start_time = datetime.today().replace(day=1)
     end_time = datetime.today()
     peak_energy_usage = str()
-    
+    options = state.getattr('input_select.energy_tariff').get('options')
+
     statistics = _get_statistic(start_time, end_time, [var_name], "hour", 'state')
     top_three = sorted(statistics.get(var_name), key=lambda d: d['state'], reverse=True)[:3]
+
+    avg_top_three = [d['state'] for d in top_three]
+    avg_top_three = sum(avg_top_three) / len(top_three)
+
+    nearest_above_avg = [int(x) for x in options if int(x) >= avg_top_three]
+    nearest_above_avg = min(nearest_above_avg)
 
     for hour in top_three:
         peak_energy_usage = f"{peak_energy_usage}, {hour.get('state')}" if peak_energy_usage else str(hour.get('state'))
 
+    peak_energy_usage += f" (avg {round(avg_top_three, 3)})"
+
+    state.set('input_select.energy_tariff', value=nearest_above_avg)
     state.set('input_text.peak_energy_usage', value=peak_energy_usage)
 
-
-@time_trigger("cron(0 * * * *)")
+@time_trigger("cron(*/1 * * * *)")
 def calc_energy_price():
+    def is_float(string):
+        try:
+            float(string)
+            return True
+        except ValueError:
+            return False
+
     start_time = datetime.today().replace(day=1, hour=0, minute=0, second=0)
     now_time = datetime.today()
-    usage_data = _get_statistic(start_time, now_time, ["sensor.nygardsvegen_6_forbruk"], "hour", 'state')
+    consumption_data = _get_statistic(start_time, now_time, ["sensor.nygardsvegen_6_forbruk"], "hour", 'state')
     price_data = _get_history(start_time, now_time, ["sensor.priceanalyzer_current_price"])
 
-    previous_price_value = 0
-    cut_off_price = 0.7
-    our_price = 0
+    consumption = [d.get('state') for d in consumption_data.get('sensor.nygardsvegen_6_forbruk')]
+    prices = [d.state for d in price_data.get('sensor.priceanalyzer_current_price')]
+
+    consumption = sum([float(x) for x in consumption if is_float(x)])
+    prices = [float(x) for x in prices if is_float(x)]
+
+    cut_off = 0.7
+    avg_price = sum(prices) / len(prices)
+    our_price = avg_price * consumption
     state_price = 0
-    avg_price = []
-    consumption = 0
 
-    for usage in usage_data.get("sensor.nygardsvegen_6_forbruk"):
-        start = usage.get('start')
-        end = usage.get('end')
-        consumption += usage.get('state')
+    if avg_price > cut_off:
+        our_price = ((avg_price) * 0.1 * 1.25) * consumption
+        state_price = ((avg_price - cut_off) * 0.9 * 1.25) * consumption
 
-    for data in price_data.get("sensor.priceanalyzer_current_price"):
-        price = float
-        try:
-            price = float(data.state)
-            #log.debug(data.last_changed)
-            previous_price_value = price
-        except ValueError: # unknown or no value
-            price = previous_price_value
 
-        avg_price.append(price)
+    attrs = {'state_class': 'total', 
+             'device_class': 'monetary',
+             'icon': 'mdi:currency-usd',
+             'unit_of_measurement': 'NOK'}
 
-    consumption = round(consumption, 2)
-    month_avg_price = round(sum(avg_price)/len(avg_price), 2)
-
-    if month_avg_price >= cut_off_price:
-        state_price = round(consumption * ((month_avg_price - cut_off_price) * 0.9), 2)
-        our_price = round(consumption * (((month_avg_price - cut_off_price) * 0.1) + cut_off_price), 2)
-    else:
-        our_price += consumption * (month_avg_price * 1.25)
-
-    log.debug(f"Snitt pris: {month_avg_price}NOK, Forbruk: {consumption}kWh, Strømstøtte: {state_price}NOK, Vår pris: {our_price}NOK")
-
-    state.set('input_number.electricity_cost_state', value=state_price)
-    state.set('input_number.electricity_cost', value=our_price)
+    state.set('sensor.estimated_electricity_avarage_cost', value=round(avg_price, 2), new_attributes=attrs)
+    state.set('sensor.estimated_electricity_cost', value=round(our_price, 2), new_attributes=attrs)
+    state.set('sensor.estimated_electricity_cost_state', value=round(state_price, 2), new_attributes=attrs)
 
 
 @time_trigger("startup")
@@ -80,10 +78,10 @@ async def correct_bad_readings():
     sensors = [k.get('stat_consumption') for k in hass.data['energy_manager'].data.get('device_consumption')]
 
     for sensor in sensors:
-        log.debug(f"Corrector setting up {sensor}")
+        #log.debug(f"Corrector setting up {sensor}")
         @state_trigger(f"{sensor}")
         async def corrector(var_name=None, value=None):
-            log.debug(f"Corrector checking {var_name}")
+            #log.debug(f"Corrector checking {var_name}")
 
             start_time = datetime.now() - timedelta(minutes=30)
             end_time = datetime.now()
@@ -98,7 +96,7 @@ async def correct_bad_readings():
             average = sum(previous_values) / len(previous_values)
             delta = abs(last.get('value') - average)
 
-            log.debug(f"Checking if delta ({delta}) is larger than avarage ({average})")
+            #log.debug(f"Checking if delta ({delta}) is larger than avarage ({average})")
 
             if delta > average:
                 log.debug(f"Delta to high for {var_name} | State: {last.get('value')}, Avarage value: {average}, Delta: {delta}")
