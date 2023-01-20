@@ -46,6 +46,7 @@ def night_light():
     lights = _get_light_devices()
 
     switch.turn_off(entity_id="switch.sunset_sunrise_lights")
+    light.turn_off(entity_id="light.kjokken_viftelys")
 
     # markus rom
     if group.someone_home == 'home':
@@ -56,6 +57,10 @@ def night_light():
                                  command_class='38',
                                  property='targetValue',
                                  value=0)
+
+@state_trigger("light.taklys_kjokken == 'on'")
+def kitchen_light():
+    light.turn_on(entity_id="light.kjokken_viftelys", brightness=255.0)
 
 ##################
 # Outdoor lights #

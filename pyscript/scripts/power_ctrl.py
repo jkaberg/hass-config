@@ -6,6 +6,10 @@ from history import _get_statistic, _get_history
 state.persist("pyscript.PWR_CTRL", default_value=0)
 state.persist("pyscript.CHARGER_LIMIT", default_value=0)
 
+def check_treshold(treshold=0.8):
+    # check if treshold is above desired energ
+    return float(sensor.estimated_hourly_consumption_filtered) > ((float(input_select.energy_tariff) - 0.2) * treshold)
+
 @time_trigger("cron(0 0 1 * *)")
 def energy_tariff():
     # adjust tariff according to month of the year
@@ -41,8 +45,6 @@ def power_tariff(value=None):
         heating(inactive=True)
     elif check(8.5):
         boiler(inactive=True)
-#    elif check(8):
-#        ev_charger(inactive=True)
     elif value == 0:
         pyscript.PWR_CTRL = 0
 
@@ -64,20 +66,21 @@ def boiler(inactive=False):
 def ev_charger():
     current = 0
     limits = [0, 6, 10, 13, 16, 20, 25, 32]
+    consumption = float(sensor.estimated_hourly_consumption_filtered)
+    threshold = float(input_select.energy_tariff) - 0.2
 
-    if 'on' in [input_boolean.force_evcharge, binary_sensor.priceanalyzer_is_ten_cheapest]:
-        consumption = float(sensor.estimated_hourly_consumption_filtered)
-        threshold = float(input_select.energy_tariff) - 0.2 # 0.2 for good measure
+    if 'on' in [binary_sensor.priceanalyzer_is_ten_cheapest, input_boolean.force_evcharge]:
         remaining_power = threshold - consumption + float(sensor.garasje_power)
         remaining_current = (remaining_power * 1000) / 230
-        log.debug(remaining_current)
         current = max([x for x in limits if x <= remaining_current])
+
+        #if float(pyscript.CHARGER_LIMIT) != current: # avoid hammering the Easee api
+        if sensor.garasje_status in ['awaiting_start', 'charging'] and float(pyscript.CHARGER_LIMIT) != current:
+            log.debug(f"Adjusting charger limit to {current}A, previously {pyscript.CHARGER_LIMIT}A")
+            pyscript.CHARGER_LIMIT = current
         
-    if float(pyscript.CHARGER_LIMIT) != current: # avoid hammering the Easee api
-        log.debug(f"Adjusting charger limit to {current}A, previously {pyscript.CHARGER_LIMIT}A")
-        pyscript.CHARGER_LIMIT = current
-        easee.set_charger_max_limit(charger_id='EHCQPVGQ',
-                                    current=current)
+            easee.set_charger_max_limit(charger_id='EHCQPVGQ',
+                                        current=current)
 
 @state_trigger("sensor.priceanalyzer_tr_heim_2")
 @time_trigger("cron(0 * * * *)")

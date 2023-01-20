@@ -28,6 +28,16 @@
       device_class: power
       icon_template: mdi:tumble-dryer
       value_template: "{{ states('sensor.vaskerom_torketrommel_power')|float(0) > 10 }}"
+    platetopp:
+      friendly_name: "Platetopp"
+      device_class: power
+      icon_template: mdi:heat-wave
+      value_template: "{{ states('sensor.kjokken_platetopp_sensor_power')|float(0) > 80 }}"
+    stekeovn:
+      friendly_name: "Stekeovn"
+      device_class: power
+      icon_template: mdi:toaster-oven
+      value_template: "{{ states('sensor.kjokken_stekeovn_power')|float(0) > 80 }}"
 
     priceanalyzer_is_five_cheapest:
       friendly_name: "Price Analyzer - Laveste 5h strømpris"

@@ -28,7 +28,7 @@ def energy_top_3_month(var_name="sensor.nygardsvegen_6_forbruk"):
     state.set('input_select.energy_tariff', value=nearest_above_avg)
     state.set('input_text.peak_energy_usage', value=peak_energy_usage)
 
-@time_trigger("cron(*/1 * * * *)")
+@time_trigger("cron(0 * * * *)")
 def calc_energy_price():
     def is_float(string):
         try:
@@ -50,7 +50,7 @@ def calc_energy_price():
 
     cut_off = 0.7
     avg_price = sum(prices) / len(prices)
-    our_price = avg_price * consumption
+    our_price = (avg_price * 1.25) * consumption
     state_price = 0
 
     if avg_price > cut_off:

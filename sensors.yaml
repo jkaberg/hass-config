@@ -62,11 +62,13 @@
   filters:
     - filter: outlier
       window_size: 4
-      radius: 0.25
+      radius: 0.25 #orignal 0.25
     - filter: lowpass
-      time_constant: 4
+      time_constant: 10
       precision: 3
-  
+    - filter: time_simple_moving_average
+      window_size: "00:10"
+      precision: 3
 - platform: systemmonitor
   resources:
     - type: memory_use_percent
