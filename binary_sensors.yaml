@@ -37,7 +37,7 @@
       friendly_name: "Stekeovn"
       device_class: power
       icon_template: mdi:toaster-oven
-      value_template: "{{ states('sensor.kjokken_stekeovn_power')|float(0) > 80 }}"
+      value_template: "{{ states('sensor.kjokken_stekeovn_power')|float(0) > 15 }}"
 
     priceanalyzer_is_five_cheapest:
       friendly_name: "Price Analyzer - Laveste 5h strømpris"
