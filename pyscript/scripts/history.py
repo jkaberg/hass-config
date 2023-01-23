@@ -4,6 +4,23 @@ from history import _get_statistic, _get_history
 
 decorated_functions = {}
 
+def calc_energy_hours():
+    # day hours = 06:00 til 22:00
+    # night hours = 22:00 til 06:00
+    night_start, night_end = datetime.strptime("22:00", "%H:%M").time(), datetime.strptime("06:00", "%H:%M").time()
+    now = datetime.now()
+    first_hour_of_month = datetime(
+        year=now.year, month=now.month, day=1, hour=0
+    )
+    night_hours, day_hours = 0, 0
+
+    while first_hour_of_month < now:
+        night_hours += night_start <= first_hour_of_month.time() <= night_end
+        day_hours += not night_hours
+        first_hour_of_month += timedelta(hours=1)
+
+    return day_hours, night_hours
+
 @time_trigger("cron(0 * * * *)")
 def energy_top_3_month(var_name="sensor.nygardsvegen_6_forbruk"):
     start_time = datetime.today().replace(day=1)
@@ -30,6 +47,7 @@ def energy_top_3_month(var_name="sensor.nygardsvegen_6_forbruk"):
 
 @time_trigger("cron(0 * * * *)")
 def calc_energy_price():
+    capacity_link = {2: 83, 5: 147, 10: 252, 15: 371, 20: 490, 25: 610, 50: 1048}
     def is_float(string):
         try:
             float(string)
@@ -48,15 +66,25 @@ def calc_energy_price():
     consumption = sum([float(x) for x in consumption if is_float(x)])
     prices = [float(x) for x in prices if is_float(x)]
 
+    # day_hours, night_hours = calc_energy_hours()
+    # https://ts.tensio.no/kunde/nettleie-priser-og-avtaler
+    # remove VAT (0.75) as its added later
+    # day_cost = 0.3855 * 0.75
+    # night_cost = 0.2980 * 0.75
+    # if now_time.month in [0, 1, 2]:
+    #     day_cost = 0.3020 * 0.75
+    #     night_cost = 0.2145 * 0.75
+    tarif_price = 0 # (day_hours * day_cost) + (night_hours * night_cost)
     cut_off = 0.7
     avg_price = sum(prices) / len(prices)
     our_price = (avg_price * 1.25) * consumption
     state_price = 0
 
     if avg_price > cut_off:
-        our_price = ((avg_price) * 0.1 * 1.25) * consumption
-        state_price = ((avg_price - cut_off) * 0.9 * 1.25) * consumption
+        our_price = (((((avg_price - cut_off) * 0.1) + cut_off) + tarif_price) * 1.25) * consumption
+        state_price = ((avg_price - cut_off) * 0.9) * consumption #((((avg_price - cut_off) * 0.9) + tarif_price) * 1.25) * consumption
 
+    our_price += capacity_link.get(int(input_select.energy_tariff))
 
     attrs = {'state_class': 'total', 
              'device_class': 'monetary',

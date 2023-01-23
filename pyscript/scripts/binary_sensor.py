@@ -21,3 +21,8 @@ def manage_kitchen_fan(value=None, var_name=None):
             light.turn_on(entity_id="light.kjokken_viftelys", brightness=254)
     else:
         switch.turn_off(entity_id='switch.kjokken_vifte')
+
+        if light.taklys_kjokken == 'on':
+            light.turn_on(entity_id="light.kjokken_viftelys", brightness=float(light.taklys_kjokken.brightness))
+        else:
+            light.turn_off(entity_id="light.kjokken_viftelys")

@@ -4,7 +4,6 @@ from datetime import datetime, timedelta, timezone
 from history import _get_statistic, _get_history
 
 state.persist("pyscript.PWR_CTRL", default_value=0)
-state.persist("pyscript.CHARGER_LIMIT", default_value=0)
 
 def check_treshold(treshold=0.8):
     # check if treshold is above desired energ
@@ -74,13 +73,11 @@ def ev_charger():
         remaining_current = (remaining_power * 1000) / 230
         current = max([x for x in limits if x <= remaining_current])
 
-        #if float(pyscript.CHARGER_LIMIT) != current: # avoid hammering the Easee api
-        if sensor.garasje_status in ['awaiting_start', 'charging'] and float(pyscript.CHARGER_LIMIT) != current:
-            log.debug(f"Adjusting charger limit to {current}A, previously {pyscript.CHARGER_LIMIT}A")
-            pyscript.CHARGER_LIMIT = current
-        
-            easee.set_charger_max_limit(charger_id='EHCQPVGQ',
-                                        current=current)
+    if float(sensor.garasje_current) != current:
+        log.debug(f"Adjusting charger limit to {current}A, previously {sensor.garasje_current}A")
+    
+        easee.set_charger_max_limit(charger_id='EHCQPVGQ',
+                                    current=current)
 
 @state_trigger("sensor.priceanalyzer_tr_heim_2")
 @time_trigger("cron(0 * * * *)")

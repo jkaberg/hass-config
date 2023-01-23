@@ -60,10 +60,11 @@ def night_light():
 
 @state_trigger("light.taklys_kjokken", "light.taklys_kjokken.brightness")
 def kitchen_light(value=None):
-    if value == 'on':
-        light.turn_on(entity_id="light.kjokken_viftelys", brightness=float(light.taklys_kjokken.brightness))
-    else:
-        light.turn_off(entity_id="light.kjokken_viftelys")
+    if not binary_sensor.platetopp == 'on':
+        if value == 'on':
+            light.turn_on(entity_id="light.kjokken_viftelys", brightness=float(light.taklys_kjokken.brightness))
+        else:
+            light.turn_off(entity_id="light.kjokken_viftelys")
 
 ##################
 # Outdoor lights #
