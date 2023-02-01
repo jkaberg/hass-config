@@ -1,9 +1,11 @@
 from datetime import datetime
 
-@state_trigger("climate.panasonic_ac_3 == 'heat_cool'")
-def heatpump_use_heat():
-    climate.set_hvac_mode(entity_id='climate.panasonic_ac_3',
-                          hvac_mode='heat')
+@state_trigger("climate.panasonic_ac_2",
+               "climate.panasonic_ac_3")
+def heatpump_use_heat(var_name=None, value=None):
+    if value == 'heat_cool':
+        climate.set_hvac_mode(entity_id=var_name,
+                              hvac_mode='heat')
 
 @time_trigger("once(06:00)", "once(22:30)")
 @state_trigger("group.someone_home")

@@ -7,18 +7,19 @@ state.persist("pyscript.PWR_CTRL", default_value=0)
 
 def check_treshold(treshold=0.8):
     # check if treshold is above desired energ
+    # 0.8 = 80%
     return float(sensor.estimated_hourly_consumption_filtered) > ((float(input_select.energy_tariff) - 0.2) * treshold)
 
 @time_trigger("cron(0 0 1 * *)")
-def energy_tariff():
+def energy_tarif():
     # adjust tariff according to month of the year
     # the logic is we use less electricty in the summer months
     # and thus can set an lower default usage tariff
     summer_time = range(4,9) # april til september
-    tariff = 10
+    tarif = 10
 
     if datetime.now().month in summer_time:
-        tariff = 5
+        tarif = 5
 
     state.set('input_select.energy_tariff', value=tarif)
 
@@ -31,7 +32,7 @@ def away_mode(value=None):
 
 @state_trigger("sensor.nygardsvegen_6_forbruk")
 @state_active("input_boolean.away_mode == 'off'")
-def power_tariff(value=None):
+def power_tarif(value=None):
     value = float(value)
 
     def check(n, v=value):
@@ -99,7 +100,8 @@ def heating(inactive=False, away_temp_adjust=4):
                'climate.litet_soverom': BEDROOM,
                'climate.gulvvarme_bad_1_etg': BATHROOM,
                'climate.gulvvarme_bad_2_etg': BATHROOM,
-               'climate.panasonic_ac_3': LIVINGROOM,
+               'climate.panasonic_ac_2': LIVINGROOM, # gangen
+               'climate.panasonic_ac_3': LIVINGROOM, # stua
                'climate.gulvvarme_inngang': FLOOR_HEATING,
                'climate.gulvvarme_stue': FLOOR_HEATING,
                'climate.gulvvarme_kjokken': FLOOR_HEATING,
@@ -116,6 +118,3 @@ def heating(inactive=False, away_temp_adjust=4):
         except TypeError:
             # device unavilable or similar.
             pass
-
-
-# lag automasjon som finner effekttrinn 

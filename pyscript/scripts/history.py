@@ -21,9 +21,10 @@ def calc_energy_hours():
 
     return day_hours, night_hours
 
+@time_trigger("startup")
 @time_trigger("cron(0 * * * *)")
 def energy_top_3_month(var_name="sensor.nygardsvegen_6_forbruk"):
-    start_time = datetime.today().replace(day=1)
+    start_time = datetime.today().replace(day=1, hour=0, minute=0, second=0)
     end_time = datetime.today()
     peak_energy_usage = str()
     options = state.getattr('input_select.energy_tariff').get('options')
@@ -45,6 +46,7 @@ def energy_top_3_month(var_name="sensor.nygardsvegen_6_forbruk"):
     state.set('input_select.energy_tariff', value=nearest_above_avg)
     state.set('input_text.peak_energy_usage', value=peak_energy_usage)
 
+@time_trigger("startup")
 @time_trigger("cron(0 * * * *)")
 def calc_energy_price():
     capacity_link = {2: 83, 5: 147, 10: 252, 15: 371, 20: 490, 25: 610, 50: 1048}
@@ -58,26 +60,28 @@ def calc_energy_price():
     start_time = datetime.today().replace(day=1, hour=0, minute=0, second=0)
     now_time = datetime.today()
     consumption_data = _get_statistic(start_time, now_time, ["sensor.nygardsvegen_6_forbruk"], "hour", 'state')
-    price_data = _get_history(start_time, now_time, ["sensor.priceanalyzer_current_price"])
+    price_data = _get_history(start_time, now_time, ["sensor.nordpool_kwh_trheim_nok_3_00_0"])
 
     consumption = [d.get('state') for d in consumption_data.get('sensor.nygardsvegen_6_forbruk')]
-    prices = [d.state for d in price_data.get('sensor.priceanalyzer_current_price')]
+    prices = [d.state for d in price_data.get('sensor.nordpool_kwh_trheim_nok_3_00_0')]
 
     consumption = sum([float(x) for x in consumption if is_float(x)])
     prices = [float(x) for x in prices if is_float(x)]
 
-    # day_hours, night_hours = calc_energy_hours()
+    day_hours, night_hours = calc_energy_hours()
+
     # https://ts.tensio.no/kunde/nettleie-priser-og-avtaler
     # remove VAT (0.75) as its added later
-    # day_cost = 0.3855 * 0.75
-    # night_cost = 0.2980 * 0.75
-    # if now_time.month in [0, 1, 2]:
-    #     day_cost = 0.3020 * 0.75
-    #     night_cost = 0.2145 * 0.75
-    tarif_price = 0 # (day_hours * day_cost) + (night_hours * night_cost)
+    daytime_hour_cost = 0.3855 * 0.75
+    nightime_hour_cost = 0.2980 * 0.75
+    if now_time.month in [0, 1, 2]:
+        daytime_hour_cost = 0.3020 * 0.75
+        nightime_hour_cost = 0.2145 * 0.75
+
+    tarif_price = (day_hours * daytime_hour_cost) + (night_hours * nightime_hour_cost)
     cut_off = 0.7
     avg_price = sum(prices) / len(prices)
-    our_price = (avg_price * 1.25) * consumption
+    our_price = ((avg_price) * 1.25) * consumption
     state_price = 0
 
     if avg_price > cut_off:
@@ -106,10 +110,10 @@ async def correct_bad_readings():
     sensors = [k.get('stat_consumption') for k in hass.data['energy_manager'].data.get('device_consumption')]
 
     for sensor in sensors:
-        #log.debug(f"Corrector setting up {sensor}")
+        log.debug(f"Setting up statistics corrector for {sensor}")
         @state_trigger(f"{sensor}")
         async def corrector(var_name=None, value=None):
-            #log.debug(f"Corrector checking {var_name}")
+            log.debug(f"Statistics corrector checking {var_name}")
 
             start_time = datetime.now() - timedelta(minutes=30)
             end_time = datetime.now()
@@ -129,9 +133,9 @@ async def correct_bad_readings():
             if delta > average:
                 log.debug(f"Delta to high for {var_name} | State: {last.get('value')}, Avarage value: {average}, Delta: {delta}")
                 hass.data["recorder_instance"].async_adjust_statistics(statistic_id=var_name,
-                                                                        start_time=last.get('start'),
-                                                                        sum_adjustment=average,
-                                                                        adjustment_unit=unit)
+                                                                       start_time=last.get('start'),
+                                                                       sum_adjustment=average,
+                                                                       adjustment_unit=unit)
 
         decorated_functions[sensor] = corrector
 
