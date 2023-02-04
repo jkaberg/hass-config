@@ -4,23 +4,6 @@ from history import _get_statistic, _get_history
 
 decorated_functions = {}
 
-def calc_energy_hours():
-    # day hours = 06:00 til 22:00
-    # night hours = 22:00 til 06:00
-    night_start, night_end = datetime.strptime("22:00", "%H:%M").time(), datetime.strptime("06:00", "%H:%M").time()
-    now = datetime.now()
-    first_hour_of_month = datetime(
-        year=now.year, month=now.month, day=1, hour=0
-    )
-    night_hours, day_hours = 0, 0
-
-    while first_hour_of_month < now:
-        night_hours += night_start <= first_hour_of_month.time() <= night_end
-        day_hours += not night_hours
-        first_hour_of_month += timedelta(hours=1)
-
-    return day_hours, night_hours
-
 @time_trigger("startup")
 @time_trigger("cron(0 * * * *)")
 def energy_top_3_month(var_name="sensor.nygardsvegen_6_forbruk"):
@@ -49,56 +32,102 @@ def energy_top_3_month(var_name="sensor.nygardsvegen_6_forbruk"):
 @time_trigger("startup")
 @time_trigger("cron(0 * * * *)")
 def calc_energy_price():
-    capacity_link = {2: 83, 5: 147, 10: 252, 15: 371, 20: 490, 25: 610, 50: 1048}
+    energy_sensor = "sensor.nygardsvegen_6_forbruk"
+    nordpool_sensor = "sensor.nordpool_kwh_trheim_nok_3_00_0"
+    capacity_tarif = {2: 83, 5: 147, 10: 252, 15: 371, 20: 490, 25: 610, 50: 1048}
+
     def is_float(string):
         try:
             float(string)
             return True
         except ValueError:
-            return False
+            return Falsew
 
     start_time = datetime.today().replace(day=1, hour=0, minute=0, second=0)
     now_time = datetime.today()
-    consumption_data = _get_statistic(start_time, now_time, ["sensor.nygardsvegen_6_forbruk"], "hour", 'state')
-    price_data = _get_history(start_time, now_time, ["sensor.nordpool_kwh_trheim_nok_3_00_0"])
+    consumption_data = _get_statistic(start_time, now_time, [energy_sensor], "hour", 'state')
+    price_data = _get_history(start_time, now_time, [nordpool_sensor])
+    prices = [float(d.state) for d in price_data.get(nordpool_sensor) if is_float(d.state)]
 
-    consumption = [d.get('state') for d in consumption_data.get('sensor.nygardsvegen_6_forbruk')]
-    prices = [d.state for d in price_data.get('sensor.nordpool_kwh_trheim_nok_3_00_0')]
-
-    consumption = sum([float(x) for x in consumption if is_float(x)])
-    prices = [float(x) for x in prices if is_float(x)]
-
-    day_hours, night_hours = calc_energy_hours()
-
-    # https://ts.tensio.no/kunde/nettleie-priser-og-avtaler
-    # remove VAT (0.75) as its added later
-    daytime_hour_cost = 0.3855 * 0.75
-    nightime_hour_cost = 0.2980 * 0.75
-    if now_time.month in [0, 1, 2]:
-        daytime_hour_cost = 0.3020 * 0.75
-        nightime_hour_cost = 0.2145 * 0.75
-
-    tarif_price = (day_hours * daytime_hour_cost) + (night_hours * nightime_hour_cost)
     cut_off = 0.7
     avg_price = sum(prices) / len(prices)
-    our_price = ((avg_price) * 1.25) * consumption
+
+    our_price = 0
     state_price = 0
+    tarif_price = 0
+    consumption = 0
 
-    if avg_price > cut_off:
-        our_price = (((((avg_price - cut_off) * 0.1) + cut_off) + tarif_price) * 1.25) * consumption
-        state_price = ((avg_price - cut_off) * 0.9) * consumption #((((avg_price - cut_off) * 0.9) + tarif_price) * 1.25) * consumption
+    for d in consumption_data.get(energy_sensor):
+        consumption_dt = d.get('start')
+        try:
+            consumption += d.get('state')
+        except:
+            pass
 
-    our_price += capacity_link.get(int(input_select.energy_tariff))
+        for p in price_data.get(nordpool_sensor):
+            price_dt = p.last_changed
+            if consumption_dt.day == price_dt.day and consumption_dt.hour == price_dt.hour:
+                try:
+                    price = float(p.state)
+                except ValueError:
+                    continue
+
+                # https://ts.tensio.no/kunde/nettleie-priser-og-avtaler
+                if price_dt.month in range(0, 2): # jan, feb, march
+                    if price_dt.hour in range(6, 21):
+                        tarif_price = 0.3020 # winter day
+                    else:
+                        tarif_price = 0.2145 # winter night
+                else:
+                    if price_dt.hour in range(6, 21):
+                        tarif_price = 0.3855 # summer day
+                    else:
+                        tarif_price = 0.2980 # summer night
+
+                tarif_price *= 0.75 # remove VAT, we add it later.
+
+                if avg_price > cut_off:
+                    our_price += (((((price - cut_off) * 0.1) + cut_off) + tarif_price) * 1.25) * d.get('state')
+                    state_price += ((price - cut_off) * 0.9) * d.get('state')
+                else:
+                    our_price += ((price + tarif_price) * 1.25) * d.get('state')
+
+    # add capacity tarif
+    our_price += capacity_tarif.get(int(input_select.energy_tariff))
 
     attrs = {'state_class': 'total', 
              'device_class': 'monetary',
              'icon': 'mdi:currency-usd',
              'unit_of_measurement': 'NOK'}
 
-    state.set('sensor.estimated_electricity_avarage_cost', value=round(avg_price, 2), new_attributes=attrs)
-    state.set('sensor.estimated_electricity_cost', value=round(our_price, 2), new_attributes=attrs)
-    state.set('sensor.estimated_electricity_cost_state', value=round(state_price, 2), new_attributes=attrs)
+    state.set('sensor.electricity_avarage_cost', value=round(avg_price, 2), new_attributes=attrs)
+    state.set('sensor.electricity_cost', value=round(our_price, 2), new_attributes=attrs)
+    state.set('sensor.electricity_consumption', value=round(consumption, 2), new_attributes={'state_class': 'total', 
+                                                                                             'device_class': 'energy',
+                                                                                             'icon': 'mdi:transmission-tower-import',
+                                                                                             'unit_of_measurement': 'kWh'})
+    state.set('sensor.electricity_cost_state', value=round(state_price, 2), new_attributes=attrs)
 
+@state_trigger("sensor.electricity_cost")
+#@time_trigger("cron(*/1 * * * *)")
+def estimate_electricity_cost(value=None):
+    capacity_tarif = {2: 83, 5: 147, 10: 252, 15: 371, 20: 490, 25: 610, 50: 1048}
+    value = float(state.get('sensor.electricity_cost'))
+    now = datetime.now()
+    days_in_month = (datetime(now.year, now.month + 1, 1) - datetime(now.year, now.month, 1)).days
+    days_passed = (now - datetime(now.year, now.month, 1)).days + 1
+    remaining_days = days_in_month - days_passed
+
+    attrs = {'state_class': 'total', 
+             'device_class': 'monetary',
+             'icon': 'mdi:currency-usd',
+             'unit_of_measurement': 'NOK'}
+
+    if now.day in range (0,13): # "fix" bad starting calculations, eg very big estimates.
+        value -= capacity_tarif.get(int(input_select.energy_tariff))
+
+    estimate = value + remaining_days * value / days_passed
+    state.set('sensor.estimated_electricity_cost', value=round(estimate, 2), new_attributes=attrs)
 
 @time_trigger("startup")
 async def correct_bad_readings():

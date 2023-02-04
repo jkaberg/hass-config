@@ -74,8 +74,9 @@ def ev_charger():
         remaining_current = (remaining_power * 1000) / 230
         current = max([x for x in limits if x <= remaining_current])
 
-    if float(sensor.garasje_current) != current:
-        log.debug(f"Adjusting charger limit to {current}A, previously {sensor.garasje_current}A")
+    # ['awaiting_start', 'charging', 'completed']
+    if float(sensor.garasje_max_charger_limit) != current:
+        log.debug(f"Adjusting charger limit to {current}A, previously {sensor.garasje_max_charger_limit}A")
     
         easee.set_charger_max_limit(charger_id='EHCQPVGQ',
                                     current=current)

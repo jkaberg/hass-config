@@ -47,16 +47,17 @@ def nobody_home():
 
 @time_trigger("once(sunrise)")
 def sunrise():
-    task.executor(toggle_lights, "switch.all_lights", "off")
-    #switch.turn_off(entity_id="switch.all_lights")
+    #
+    # task.executor(toggle_lights, "switch.all_lights", "off")
+    switch.turn_off(entity_id="switch.all_lights")
 
 @time_trigger("once(05:30)", "once(sunset)")
 @time_active("range(05:30, sunrise)", "range(sunset, 22:00)")
 def morning_sunset_light():
     switches = ['switch.sunset_sunrise_lights', 'switch.night_lights']
 
-    task.executor(toggle_lights, switches, "on")
-    #switch.turn_on(entity_id=switches)
+    #task.executor(toggle_lights, switches, "on")
+    switch.turn_on(entity_id=switches)
 
 # Nattbelysning
 @time_trigger("once(22:30)")
@@ -65,9 +66,9 @@ def night_light():
 
     zigbee_lights = ["switch.sunset_sunrise_lights", "light.kjokken_viftelys"]
 
-    task.executor(toggle_lights, zigbee_lights, "off")
-    #switch.turn_off(entity_id="switch.sunset_sunrise_lights")
-    #light.turn_off(entity_id="light.kjokken_viftelys")
+    #task.executor(toggle_lights, zigbee_lights, "off")
+    switch.turn_off(entity_id="switch.sunset_sunrise_lights")
+    light.turn_off(entity_id="light.kjokken_viftelys")
 
     # markus rom
     if group.someone_home == 'home':
@@ -95,13 +96,13 @@ def kitchen_light(value=None):
 def outdoor_light_sunrise():
     utelys = ['switch.utelys', 'switch.localtuya_socket01_2']
     
-    task.executor(toggle_lights, utelys, "off")
-    #switch.turn_off(entity_id=utelys)
+    #task.executor(toggle_lights, utelys, "off")
+    switch.turn_off(entity_id=utelys)
 
 
 @time_trigger("once(sunset - 1m)")
 def outdoor_light_sunset():
     utelys = ['switch.utelys', 'switch.localtuya_socket01_2']
 
-    task.executor(toggle_lights, utelys, "on")
-    #switch.turn_on(entity_id=utelys)
+    #task.executor(toggle_lights, utelys, "on")
+    switch.turn_on(entity_id=utelys)

@@ -7,12 +7,12 @@
   unique_id: energy_per_hour2
   source: sensor.strommaler_power
   unit_prefix: k
-
 - platform: integration
   name: panasonic_ac_2_consumption_kwh
   unique_id: panasonic_ac_2_consumption_kwh
   source: sensor.panasonic_ac_power_consumption
   unit_prefix: k
+  method: left
 
 - platform: derivative
   source: sensor.energy_per_hour2
@@ -27,10 +27,6 @@
       friendly_name: "Sun Azimuth"
       unit_of_measurement: 'degrees'
       value_template: "{{ state_attr('sun.sun', 'azimuth') }}"
-    panasonic_ac_inside_temperature:
-      friendly_name: "Inside temperature"
-      unit_of_measurement: '°C'
-      value_template: "{{ state_attr('climate.panasonic_ac', 'current_temperature') }}"
     vaskerom_vvb_temp_corrected:
       friendly_name: "VVB temperatur justert"
       icon_template: mdi:coolant-temperature
@@ -51,11 +47,6 @@
         {% else %}
           0.0
         {% endif %}
-    priceanalyzer_current_price:
-      friendly_name: "Nåværende strømpris"
-      device_class: monetary
-      unit_of_measurement: NOK/kWh
-      value_template: "{{ state_attr('sensor.priceanalyzer_tr_heim_2', 'current_hour').value }}"
     estimated_hourly_consumption:
       friendly_name: "Estimert Timeforbruk"
       unit_of_measurement: 'kWh'
@@ -75,6 +66,7 @@
     - filter: time_simple_moving_average
       window_size: "00:10"
       precision: 3
+
 - platform: systemmonitor
   resources:
     - type: memory_use_percent

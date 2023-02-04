@@ -14,6 +14,7 @@ def manage_coffemaker(value=None):
 @state_trigger("binary_sensor.platetopp == 'off'", state_hold=900)
 @state_trigger("binary_sensor.stekeovn == 'off'", state_hold=900)
 def manage_kitchen_fan(value=None, var_name=None):
+    log.debug(f"{var_name} - {value}")
     if value == 'on':
         switch.turn_on(entity_id='switch.kjokken_vifte')
 
