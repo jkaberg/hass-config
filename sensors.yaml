@@ -47,25 +47,22 @@
         {% else %}
           0.0
         {% endif %}
-    estimated_hourly_consumption:
-      friendly_name: "Estimert Timeforbruk"
-      unit_of_measurement: 'kWh'
-      device_class: energy
-      value_template: "{{ (states('sensor.nygardsvegen_6_forbruk') | float(15) + states('sensor.derivert_effekt') | float(0) * (3600 - now().minute * 60 - now().second) / 3600) | round(3) }}"
+#    estimated_hourly_consumption:
+#      friendly_name: "Estimert Timeforbruk"
+#      unit_of_measurement: 'kWh'
+#      device_class: energy
+#      value_template: "{{ (states('sensor.nygardsvegen_6_forbruk') | float(15) + states('sensor.derivert_effekt') | float(0) * (3600 - now().minute * 60 - now().second) / 3600) | round(3) }}"
 
-- platform: filter
-  name: "Estimated hourly consumption filtered"
-  entity_id: sensor.estimated_hourly_consumption
-  filters:
-    - filter: outlier
-      window_size: 10
-      radius: 0.25 #orignal 0.25
-    - filter: lowpass
-      time_constant: 10
-      precision: 3
-    - filter: time_simple_moving_average
-      window_size: "00:10"
-      precision: 3
+#- platform: filter
+#  name: "Estimated hourly consumption filtered"
+#  entity_id: sensor.estimated_hourly_consumption
+#  filters:
+#    - filter: outlier
+#      window_size: 4
+#      radius: 0.25 #orignal 0.25
+#    - filter: lowpass
+#      time_constant: 4
+#      precision: 3
 
 - platform: systemmonitor
   resources:

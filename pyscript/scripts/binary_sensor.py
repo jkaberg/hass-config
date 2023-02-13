@@ -9,12 +9,9 @@ def manage_coffemaker(value=None):
     else:
         switch.turn_on(entity_id='switch.kaffekoker_2')
 
-@state_trigger("binary_sensor.platetopp == 'on'", 
-               "binary_sensor.stekeovn == 'on'")
-@state_trigger("binary_sensor.platetopp == 'off'", state_hold=900)
-@state_trigger("binary_sensor.stekeovn == 'off'", state_hold=900)
+@state_trigger("'on' in [binary_sensor.platetopp, binary_sensor.stekeovn]")
+@state_trigger("binary_sensor.platetopp == 'off' or binary_sensor.stekeovn == 'off'", state_hold=900)
 def manage_kitchen_fan(value=None, var_name=None):
-    log.debug(f"{var_name} - {value}")
     if value == 'on':
         switch.turn_on(entity_id='switch.kjokken_vifte')
 

@@ -5,6 +5,25 @@ from history import _get_statistic, _get_history
 
 state.persist("pyscript.PWR_CTRL", default_value=0)
 
+@time_trigger("startup", "cron(*/6 * * * *)")
+#@state_trigger("sensor.energy_per_hour2")
+def estimate_power_usage(var_name="sensor.energy_per_hour2", time_window=15):
+    start_time = datetime.now() - timedelta(minutes=time_window)
+    now_time = datetime.now()
+
+    #if now_time.minute < time_window: return
+
+    stats = _get_history(start_time, now_time, [var_name]).get(var_name)
+    stats = [float(d.state) for d in stats]
+    estimate = (((stats[-1] - stats[0]) * (60 - now_time.minute)) / len(stats)) + float(sensor.nygardsvegen_6_forbruk)
+
+    estimate = estimate if estimate > 0 else 0
+
+    state.set('sensor.estimated_hourly_consumption', value=round(estimate, 3), new_attributes={'state_class': 'total', 
+                                                                                               'device_class': 'energy',
+                                                                                               'icon': 'mdi:transmission-tower-import',
+                                                                                               'unit_of_measurement': 'kWh'})
+
 def check_treshold(treshold=0.8):
     # check if treshold is above desired energ
     # 0.8 = 80%
@@ -34,6 +53,7 @@ def away_mode(value=None):
 @state_active("input_boolean.away_mode == 'off'")
 def power_tarif(value=None):
     value = float(value)
+    energy_tarif = float(input_select.energy_tariff)
 
     def check(n, v=value):
         if v > n and v > float(pyscript.PWR_CTRL):
@@ -41,9 +61,9 @@ def power_tarif(value=None):
             return True
         return False
 
-    if check(9.3):
+    if check(energy_tarif - 0.3): # 4.8 / 9.8
         heating(inactive=True)
-    elif check(8.5):
+    elif check(energy_tarif - 0.5): # 4.5 / 9.5
         boiler(inactive=True)
     elif value == 0:
         pyscript.PWR_CTRL = 0
@@ -59,24 +79,25 @@ def boiler(inactive=False):
       switch.turn_off(entity_id='switch.vaskerom_vvb')
 
 @state_trigger("binary_sensor.priceanalyzer_is_ten_cheapest",
+               "sensor.estimated_hourly_consumption",
                "input_boolean.force_evcharge",
-               "sensor.estimated_hourly_consumption_filtered",
                "input_select.energy_tariff")
 @state_active("input_boolean.away_mode == 'off'")
 def ev_charger():
     current = 0
     limits = [0, 6, 10, 13, 16, 20, 25, 32]
-    consumption = float(sensor.estimated_hourly_consumption_filtered)
+    consumption = float(sensor.estimated_hourly_consumption)
     threshold = float(input_select.energy_tariff) - 0.2
 
     if 'on' in [binary_sensor.priceanalyzer_is_ten_cheapest, input_boolean.force_evcharge]:
         remaining_power = threshold - consumption + float(sensor.garasje_power)
         remaining_current = (remaining_power * 1000) / 230
-        current = max([x for x in limits if x <= remaining_current])
+        log.debug(remaining_current)
+        current = max([x for x in limits if x <= remaining_current]) if remaining_current > 0 else 0
 
     # ['awaiting_start', 'charging', 'completed']
     if float(sensor.garasje_max_charger_limit) != current:
-        log.debug(f"Adjusting charger limit to {current}A, previously {sensor.garasje_max_charger_limit}A")
+        log.debug(f"Adjusting EV charger limit to {current}A, previously {sensor.garasje_max_charger_limit}A")
     
         easee.set_charger_max_limit(charger_id='EHCQPVGQ',
                                     current=current)

@@ -60,10 +60,10 @@ def cold_basement():
             msg=f"Det er nå {sensor.kjeller_ytterdor_sensor_temperature}°C i kjelleren.")
 
 
-@state_trigger("binary_sensor.oppvaskmaskin == 'off'",
-               "binary_sensor.torketrommel == 'off'",
-               "binary_sensor.vaskemaskin == 'off'",
-               state_hold=300)
+@state_trigger("'off' in [binary_sensor.oppvaskmaskin, \
+                          binary_sensor.torketrommel, \
+                          binary_sensor.vaskemaskin \
+                         ]", state_hold=300)
 def notify_machines_compelete(value=None, var_name=None):
     machines = {'binary_sensor.oppvaskmaskin': 'Oppvaskmaskin',
                 'binary_sensor.torketrommel': 'Tørketrommel',
@@ -71,7 +71,7 @@ def notify_machines_compelete(value=None, var_name=None):
 
     name = machines.get(var_name)
 
-    if name:
+    if name and value == 'off':
         _notify(msg=f"{name} er ferdig!", speak=True)
 
 

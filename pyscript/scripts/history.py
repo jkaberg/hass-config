@@ -41,7 +41,7 @@ def calc_energy_price():
             float(string)
             return True
         except ValueError:
-            return Falsew
+            return False
 
     start_time = datetime.today().replace(day=1, hour=0, minute=0, second=0)
     now_time = datetime.today()
