@@ -5,17 +5,16 @@ from history import _get_statistic, _get_history
 
 state.persist("pyscript.PWR_CTRL", default_value=0)
 
-@time_trigger("startup", "cron(*/6 * * * *)")
+@time_trigger("startup", "cron(*/5 * * * *)")
 #@state_trigger("sensor.energy_per_hour2")
-def estimate_power_usage(var_name="sensor.energy_per_hour2", time_window=15):
+def estimate_power_usage(var_name="sensor.energy_per_hour2", time_window=7):
     start_time = datetime.now() - timedelta(minutes=time_window)
     now_time = datetime.now()
-
-    #if now_time.minute < time_window: return
 
     stats = _get_history(start_time, now_time, [var_name]).get(var_name)
     stats = [float(d.state) for d in stats]
     estimate = (((stats[-1] - stats[0]) * (60 - now_time.minute)) / len(stats)) + float(sensor.nygardsvegen_6_forbruk)
+    log.debug(f"Estimated consumption: {estimate}")
 
     estimate = estimate if estimate > 0 else 0
 
@@ -24,16 +23,8 @@ def estimate_power_usage(var_name="sensor.energy_per_hour2", time_window=15):
                                                                                                'icon': 'mdi:transmission-tower-import',
                                                                                                'unit_of_measurement': 'kWh'})
 
-def check_treshold(treshold=0.8):
-    # check if treshold is above desired energ
-    # 0.8 = 80%
-    return float(sensor.estimated_hourly_consumption_filtered) > ((float(input_select.energy_tariff) - 0.2) * treshold)
-
 @time_trigger("cron(0 0 1 * *)")
 def energy_tarif():
-    # adjust tariff according to month of the year
-    # the logic is we use less electricty in the summer months
-    # and thus can set an lower default usage tariff
     summer_time = range(4,9) # april til september
     tarif = 10
 
@@ -61,9 +52,9 @@ def power_tarif(value=None):
             return True
         return False
 
-    if check(energy_tarif - 0.3): # 4.8 / 9.8
+    if check(energy_tarif - 0.2): # 4.8 / 9.8
         heating(inactive=True)
-    elif check(energy_tarif - 0.5): # 4.5 / 9.5
+    elif check(energy_tarif - 0.3): # 4.5 / 9.5
         boiler(inactive=True)
     elif value == 0:
         pyscript.PWR_CTRL = 0
@@ -72,7 +63,6 @@ def power_tarif(value=None):
 @time_trigger("cron(0 * * * *)")
 @state_active("input_boolean.away_mode == 'off'")
 def boiler(inactive=False):
-    # TODO: calc % of current tariff instead of current apphroach 
     if binary_sensor.priceanalyzer_is_five_cheapest == 'on' and not inactive:
       switch.turn_on(entity_id='switch.vaskerom_vvb')
     else:
@@ -80,33 +70,33 @@ def boiler(inactive=False):
 
 @state_trigger("binary_sensor.priceanalyzer_is_ten_cheapest",
                "sensor.estimated_hourly_consumption",
+               "sensor.garasje_status",
                "input_boolean.force_evcharge",
                "input_select.energy_tariff")
 @state_active("input_boolean.away_mode == 'off'")
 def ev_charger():
     current = 0
     limits = [0, 6, 10, 13, 16, 20, 25, 32]
+
     consumption = float(sensor.estimated_hourly_consumption)
-    threshold = float(input_select.energy_tariff) - 0.2
+    threshold = float(input_select.energy_tariff) - 0.4
 
     if 'on' in [binary_sensor.priceanalyzer_is_ten_cheapest, input_boolean.force_evcharge]:
-        remaining_power = threshold - consumption + float(sensor.garasje_power)
+        remaining_power = (threshold - consumption) + float(sensor.garasje_power)
         remaining_current = (remaining_power * 1000) / 230
-        log.debug(remaining_current)
+        log.debug(f"{remaining_power} - {remaining_current}")
         current = max([x for x in limits if x <= remaining_current]) if remaining_current > 0 else 0
 
-    # ['awaiting_start', 'charging', 'completed']
-    if float(sensor.garasje_max_charger_limit) != current:
-        log.debug(f"Adjusting EV charger limit to {current}A, previously {sensor.garasje_max_charger_limit}A")
+    if float(sensor.garasje_dynamic_charger_limit) != current:
+        log.debug(f"Adjusting EV charger limit to {current}A, previously {sensor.garasje_dynamic_charger_limit}A")
     
-        easee.set_charger_max_limit(charger_id='EHCQPVGQ',
-                                    current=current)
+        easee.set_charger_dynamic_limit(charger_id='EHCQPVGQ',
+                                        current=current)
 
 @state_trigger("sensor.priceanalyzer_tr_heim_2")
 @time_trigger("cron(0 * * * *)")
 @state_active("input_boolean.away_mode == 'off'")
 def heating(inactive=False, away_temp_adjust=4):
-    # TODO: calc % of current tariff instead of current apphroach 
     value = -abs(away_temp_adjust) if inactive else float(sensor.priceanalyzer_tr_heim_2)
 
     BATHROOM = 25
@@ -134,7 +124,7 @@ def heating(inactive=False, away_temp_adjust=4):
         temp += value
 
         try:
-            if temp != float(state.getattr(heater).get('temperature')):
+            if state.get(heater) is not 'off' and float(state.getattr(heater).get('temperature')) is not temp:
                 climate.set_temperature(entity_id=heater,
                                         temperature=temp)
         except TypeError:

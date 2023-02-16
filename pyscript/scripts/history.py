@@ -92,6 +92,8 @@ def calc_energy_price():
                 else:
                     our_price += ((price + tarif_price) * 1.25) * d.get('state')
 
+                #log.debug(our_price)
+
     # add capacity tarif
     our_price += capacity_tarif.get(int(input_select.energy_tariff))
 

@@ -30,6 +30,7 @@ logger:
     custom_components.localtuya.common: fatal
     
 recorder:
+  purge_keep_days: 240
   exclude:
     entity_globs:
       - pyscript.script*
