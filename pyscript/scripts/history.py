@@ -59,10 +59,13 @@ def calc_energy_price():
 
     for d in consumption_data.get(energy_sensor):
         consumption_dt = d.get('start')
+        consumption_state = 0.0
         try:
-            consumption += d.get('state')
+            consumption_state = float(d.get('state'))
         except:
             pass
+        
+        consumption += consumption_state
 
         for p in price_data.get(nordpool_sensor):
             price_dt = p.last_changed
@@ -87,10 +90,10 @@ def calc_energy_price():
                 tarif_price *= 0.75 # remove VAT, we add it later.
 
                 if avg_price > cut_off:
-                    our_price += (((((price - cut_off) * 0.1) + cut_off) + tarif_price) * 1.25) * d.get('state')
-                    state_price += ((price - cut_off) * 0.9) * d.get('state')
+                    our_price += (((((price - cut_off) * 0.1) + cut_off) + tarif_price) * 1.25) * consumption_state
+                    state_price += ((price - cut_off) * 0.9) * consumption_state
                 else:
-                    our_price += ((price + tarif_price) * 1.25) * d.get('state')
+                    our_price += ((price + tarif_price) * 1.25) * consumption_state
 
                 #log.debug(our_price)
 
