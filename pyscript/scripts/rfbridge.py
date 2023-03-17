@@ -33,7 +33,7 @@ def bb_conv(szInpStr, repVal):
     return szOutAux
 
 
-@time_trigger("startup")
+#@time_trigger("startup")
 def send_adv_code():
     raw_code = "AA B1 05 12D4 05BE 02D0 0172 1FAE 481A3A3B2B2A3A3A3B2A3A3A3A3A3B2A3A3B2B2A3A3A3A3A3A3B2B2B2B2B2A3B2A3B2B2A3A3A3A3B2B 55"
 
@@ -45,7 +45,7 @@ def send_adv_code():
     
 # brannvarslene er Flamingo FA21RF
 
-@event_trigger(EVENT_CALL_SERVICE) #, "domain == 'esphome'") # and service in ['rf_bridge_send_rf_raw']")
+#@event_trigger(EVENT_CALL_SERVICE) #, "domain == 'esphome'") # and service in ['rf_bridge_send_rf_raw']")
 def test1(**kwargs): #domain=None, service=None, service_data=None):
     log.debug(f"{kwargs}") # "{service} - {service_data}")
 
