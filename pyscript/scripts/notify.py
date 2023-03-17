@@ -112,3 +112,24 @@ def check_batteries():
         if sensor not in battery_devices:
             del decorated_functions[sensor]
 
+
+@state_trigger("person.jonas")
+def track_jonas(value=None):
+    value = value.lower()
+
+    if value not in ["not_home"]:
+        msg = 'sin lokasjon er ukjent'
+
+        if value is 'home':
+            msg = 'er hjemme'
+        elif value in ['skolen', 'barnehagen', 'butikken']:
+            msg = f'er i {value}'
+        else:
+            msg = f'er hos {value.capitalize()}'
+
+        _notify(f"Jonas {msg}.")
+
+
+@state_trigger("float(sensor.jonas_langen_kaberg_watch_battery) < 35")
+def charge_jonas_watch():
+    _notify("Lavt batteri på Jonas sin klokke.")

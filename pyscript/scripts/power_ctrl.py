@@ -6,58 +6,9 @@ from history import _get_statistic, _get_history
 
 state.persist("pyscript.PWR_CTRL", default_value=0)
 
-#@time_trigger("startup")#, "cron(*/3 * * * *)")
-#@state_trigger("sensor.nygardsvegen_6_forbruk")
-def estimate_power_usage(var_name="sensor.energy_per_hour2", time_window=15):
-    start_time = datetime.now() - timedelta(minutes=time_window)
-    now_time = datetime.now()
-
-    if now_time.minute in range(0, time_window):
-        start_time -= timedelta(minutes=now_time.minute)
-        #log.debug(start_time)
-
-    stats = _get_history(start_time, now_time, [var_name]).get(var_name)
-    stats = [float(d.state) for d in stats]
-    estimate = (((stats[-1] - stats[0]) * (60 - now_time.minute)) / len(stats)) + float(sensor.nygardsvegen_6_forbruk)
-    log.debug(f"Estimated consumption: {estimate}")
-
-    if estimate > 0:
-        state.set('sensor.estimated_hourly_consumption', value=round(estimate, 3), new_attributes={'state_class': 'total', 
-                                                                                                'device_class': 'energy',
-                                                                                                'icon': 'mdi:transmission-tower-import',
-                                                                                                'unit_of_measurement': 'kWh'})
-
-#@time_trigger("startup", "cron(*/5 * * * *)")
-#@state_trigger("sensor.energy_per_hour2")
-def estimate_power_usage2(var_name="sensor.energy_per_hour2", time_window=10):
-    now_time = datetime.now()
-    start_time = now_time - timedelta(minutes=time_window)
-
-    # get data within time window for specified variable
-    data = _get_history(start_time, now_time, [var_name]).get(var_name)
-
-    # calculate linear regression slope and intercept
-    x = [(d.last_changed - data[0].last_changed).total_seconds() / 3600 for d in data]
-    y = [float(d.state) for d in data]
-    slope, intercept = np.polyfit(x, y, 1)
-
-    # predict value at end of current hour
-    end_of_hour = datetime(now_time.year, now_time.month, now_time.day, now_time.hour) + timedelta(hours=1)
-    x_pred = (end_of_hour - data[0].last_changed.replace(tzinfo=None)).total_seconds() / 3600
-    y_pred = slope * x_pred + intercept
-    prediction = y_pred - float(state.get(var_name))
-
-    log.debug(f"Estimated consumption: {prediction}")
-
-    # set state attributes and update sensor state
-    state.set('sensor.estimated_hourly_consumption', value=round(prediction, 3), new_attributes={'state_class': 'total', 
-                                                                                                 'device_class': 'energy',
-                                                                                                 'icon': 'mdi:transmission-tower-import',
-                                                                                                 'unit_of_measurement': 'kWh'})
-
 @time_trigger("startup", "cron(*/5 * * * *)")
 #@state_trigger("sensor.nygardsvegen_6_forbruk")
-def estimate_power_usage3(var_name="sensor.nygardsvegen_6_forbruk"):
+def estimate_power_usage(var_name="sensor.nygardsvegen_6_forbruk"):
     now = datetime.now()
 
     # get some sampling data first
@@ -132,18 +83,18 @@ def ev_charger():
     consumption = float(sensor.estimated_hourly_consumption)
     threshold = float(input_select.energy_tariff) - 0.6
 
-    if sensor.garasje_status in ['completed', 'disconnected'] and state.get(eid) is not 'off':
+    if sensor.garasje_status in ['completed', 'disconnected'] and state.get(eid) != 'off':
         switch.turn_off(entity_id=eid)
 
     elif sensor.garasje_status in ['awaiting_start', 'ready_to_charge', 'charging']:
         if 'on' in [binary_sensor.priceanalyzer_is_ten_cheapest, input_boolean.force_evcharge]:
-            if state.get(eid) is not 'on':
-                switch.turn_on(entity_id=eid)
-
             remaining_power = (threshold - consumption) + float(sensor.garasje_power)
             remaining_current = (remaining_power * 1000) / 230
-            log.debug(f"{remaining_power} - {remaining_current}")
+            #log.debug(f"{remaining_power} - {remaining_current}")
             current = max([x for x in limits if x <= remaining_current]) if remaining_current > 0 else 0
+
+            if state.get(eid) is not 'on':
+                switch.turn_on(entity_id=eid)
 
             if float(sensor.garasje_dynamic_charger_limit) != current:
                 log.debug(f"Adjusting EV charger limit to {current}A, previously {sensor.garasje_dynamic_charger_limit}A")
@@ -151,8 +102,8 @@ def ev_charger():
                 easee.set_charger_dynamic_limit(charger_id='EHCQPVGQ',
                                                 current=current)
         else:
-            if state.get(eid) is not 'off':
-                switch.turn_off(entity_id=eid)
+            easee.set_charger_dynamic_limit(charger_id='EHCQPVGQ',
+                                            current=0)
 
 @state_trigger("sensor.priceanalyzer_tr_heim_2")
 @time_trigger("cron(0 * * * *)")
@@ -182,7 +133,10 @@ def heating(inactive=False, away_temp_adjust=4):
                'climate.panelovn_kontor': LIVINGROOM}
 
     for heater, temp in heaters.items():
-        temp += value
+        if value > 0 and 'panasonic' in heater:
+            pass
+        else:
+            temp += value
 
         try:
             if state.get(heater) is not 'off' and float(state.getattr(heater).get('temperature')) is not temp:

@@ -58,7 +58,8 @@ def calc_energy_price():
     consumption = 0
 
     for d in consumption_data.get(energy_sensor):
-        consumption_dt = d.get('start')
+        consumption_dt = datetime.fromtimestamp(d.get('start'))
+
         consumption_state = 0.0
         try:
             consumption_state = float(d.get('state'))
@@ -113,15 +114,21 @@ def calc_energy_price():
                                                                                              'unit_of_measurement': 'kWh'})
     state.set('sensor.electricity_cost_state', value=round(state_price, 2), new_attributes=attrs)
 
+@time_trigger("startup")
 @state_trigger("sensor.electricity_cost")
-#@time_trigger("cron(*/1 * * * *)")
 def estimate_electricity_cost(value=None):
     capacity_tarif = {2: 83, 5: 147, 10: 252, 15: 371, 20: 490, 25: 610, 50: 1048}
-    value = float(state.get('sensor.electricity_cost'))
+
+    try:
+        value = float(value)
+    except: 
+        return
+
     now = datetime.now()
+
     days_in_month = (datetime(now.year, now.month + 1, 1) - datetime(now.year, now.month, 1)).days
     days_passed = (now - datetime(now.year, now.month, 1)).days + 1
-    remaining_days = days_in_month - days_passed
+    #remaining_days = days_in_month - days_passed
 
     attrs = {'state_class': 'total', 
              'device_class': 'monetary',
@@ -131,7 +138,7 @@ def estimate_electricity_cost(value=None):
     if now.day in range (0,13): # "fix" bad starting calculations, eg very big estimates.
         value -= capacity_tarif.get(int(input_select.energy_tariff))
 
-    estimate = value + remaining_days * value / days_passed
+    estimate = (value / days_passed) * days_in_month
     state.set('sensor.estimated_electricity_cost', value=round(estimate, 2), new_attributes=attrs)
 
 @time_trigger("startup")
@@ -155,7 +162,7 @@ async def correct_bad_readings():
             stats = _get_statistic(start_time, end_time, [var_name], "5minute", 'state')
             unit = state.getattr(var_name).get('unit_of_measurement')
 
-            stat = [{'start': d.get('start'), 'value': float(d.get('state'))} for d in stats.get(var_name)]
+            stat = [{'start': datetime.fromtimestamp(d.get('start')), 'value': float(d.get('state'))} for d in stats.get(var_name)]
             previous, last = stat[:-1], stat[-1]
             previous_values = [v.get('value') for v in previous]
 

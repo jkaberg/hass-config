@@ -31,10 +31,22 @@ logger:
     custom_components.localtuya.common: fatal
     
 recorder:
+  db_url: !secret psql_string
+  db_retry_wait: 15
   purge_keep_days: 240
   exclude:
+    domains:
+      - automation
+      - updater
     entity_globs:
+      - sensor.weather_*
       - pyscript.script*
+    entities:
+      - sun.sun # Don't record sun data
+      - sensor.last_boot # Comes from 'systemmonitor' sensor platform
+      - sensor.date
+    event_types:
+      - call_service
   
 homeassistant:
   customize_glob: !include customize.yaml
