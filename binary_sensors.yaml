@@ -12,7 +12,7 @@
       value_template: "{{ states('sensor.vaskerom_avfukter_power') | float(0) > 10.0 }}"
     oppvaskmaskin:
       friendly_name: "Oppvaskmaskin"
-      delay_off: "00:05:00"
+      delay_off: "00:10:00"
       device_class: power
       icon_template: mdi:dishwasher
       value_template: "{{ states('sensor.kjokken_oppvaskmaskin_power') | float(0) > 10.0 }}"
@@ -40,6 +40,11 @@
       device_class: power
       icon_template: mdi:toaster-oven
       value_template: "{{ states('sensor.kjokken_stekeovn_power') | float(0) > 15.0 }}"
+    jonas_klokke:
+      friendly_name: "Jonas klokke"
+      device_class: battery
+      icon_template: mdi:watch
+      value_template: "{{ states('sensor.jonas_langen_kaberg_watch_battery') | float(0) < 35.0 }}"
 
     priceanalyzer_is_five_cheapest:
       friendly_name: "Price Analyzer - Laveste 5h strømpris"

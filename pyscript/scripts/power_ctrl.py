@@ -1,31 +1,12 @@
-import sys
-import numpy as np
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 
 from history import _get_statistic, _get_history
 
 state.persist("pyscript.PWR_CTRL", default_value=0)
 
-@time_trigger("startup", "cron(*/5 * * * *)")
-#@state_trigger("sensor.nygardsvegen_6_forbruk")
-def estimate_power_usage(var_name="sensor.nygardsvegen_6_forbruk"):
-    now = datetime.now()
-
-    # get some sampling data first
-    if now.minute in range(0, 4): return
-
-    usage = float(state.get(var_name))
-    per_minute = usage / now.minute
-    estimated = round(per_minute * 60, 2)
-
-    log.debug(f"Estimated consumption: {estimated}")
-    state.set('sensor.estimated_hourly_consumption', value=estimated, new_attributes={'state_class': 'total', 
-                                                                                      'device_class': 'energy',
-                                                                                      'icon': 'mdi:transmission-tower-import',
-                                                                                      'unit_of_measurement': 'kWh'})
-
 @time_trigger("cron(0 0 1 * *)")
 def energy_tarif():
+    """ Set our target energy tarif for current month """
     summer_time = range(4,9) # april til september
     tarif = 10
 
@@ -44,6 +25,10 @@ def away_mode(value=None):
 @state_trigger("sensor.nygardsvegen_6_forbruk")
 @state_active("input_boolean.away_mode == 'off'")
 def power_tarif(value=None):
+    """ Adjust boiler and heating if we go above tresholds
+        The check() function is a very simple state machine
+        to keep track of what has been done.
+    """
     value = float(value)
     energy_tarif = float(input_select.energy_tariff)
 
@@ -64,51 +49,17 @@ def power_tarif(value=None):
 @time_trigger("cron(0 * * * *)")
 @state_active("input_boolean.away_mode == 'off'")
 def boiler(inactive=False):
+    """ Handle boiler with regard to five cheapest hours """
     if binary_sensor.priceanalyzer_is_five_cheapest == 'on' and not inactive:
       switch.turn_on(entity_id='switch.vaskerom_vvb')
     else:
       switch.turn_off(entity_id='switch.vaskerom_vvb')
 
-@state_trigger("binary_sensor.priceanalyzer_is_ten_cheapest",
-               "sensor.estimated_hourly_consumption",
-               "sensor.garasje_status",
-               "input_boolean.force_evcharge",
-               "input_select.energy_tariff")
-@state_active("input_boolean.away_mode == 'off'")
-def ev_charger():
-    current = 0
-    eid = 'switch.garasje_is_enabled'
-    limits = [0, 6, 10, 13, 16, 20, 25, 32]
-
-    consumption = float(sensor.estimated_hourly_consumption)
-    threshold = float(input_select.energy_tariff) - 0.6
-
-    if sensor.garasje_status in ['completed', 'disconnected'] and state.get(eid) != 'off':
-        switch.turn_off(entity_id=eid)
-
-    elif sensor.garasje_status in ['awaiting_start', 'ready_to_charge', 'charging']:
-        if 'on' in [binary_sensor.priceanalyzer_is_ten_cheapest, input_boolean.force_evcharge]:
-            remaining_power = (threshold - consumption) + float(sensor.garasje_power)
-            remaining_current = (remaining_power * 1000) / 230
-            #log.debug(f"{remaining_power} - {remaining_current}")
-            current = max([x for x in limits if x <= remaining_current]) if remaining_current > 0 else 0
-
-            if state.get(eid) is not 'on':
-                switch.turn_on(entity_id=eid)
-
-            if float(sensor.garasje_dynamic_charger_limit) != current:
-                log.debug(f"Adjusting EV charger limit to {current}A, previously {sensor.garasje_dynamic_charger_limit}A")
-            
-                easee.set_charger_dynamic_limit(charger_id='EHCQPVGQ',
-                                                current=current)
-        else:
-            easee.set_charger_dynamic_limit(charger_id='EHCQPVGQ',
-                                            current=0)
-
 @state_trigger("sensor.priceanalyzer_tr_heim_2")
 @time_trigger("cron(0 * * * *)")
 @state_active("input_boolean.away_mode == 'off'")
 def heating(inactive=False, away_temp_adjust=4):
+    """ Handle heating using the heat capicator apphroach """
     value = -abs(away_temp_adjust) if inactive else float(sensor.priceanalyzer_tr_heim_2)
 
     BATHROOM = 25

@@ -1,18 +1,3 @@
-@state_trigger("binary_sensor.front_door_ding == 'on'")
-@state_active("group.someone_home == 'home'")
-def doorbell_ring():
-    """
-    Play sound on google mini's when someone pressed the doorbell.
-    """
-
-    devices = ['media_player.nestmini7392',
-               'media_player.nestmini9210']
-
-    media_player.play_media(media_content_id='https://hast.eth0.sh/local/audio/doorbell.mp3', 
-                            media_content_type='music',
-                            entity_id=devices,
-                            announce=True)
-
 #@time_trigger("cron(*/3 * * * *)")
 #@state_trigger("media_player.nestmini7392 == 'off' \
 #                or media_player.nestmini9210 == 'off'")

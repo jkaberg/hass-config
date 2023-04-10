@@ -1,11 +1,15 @@
-import os
 import sys
+from homeassistant.util.package import install_package
 
-# we need our modules!
 if "/config/pyscript/modules" not in sys.path:
     sys.path.append("/config/pyscript/modules")
 
-# install necessary packages :-)
-@time_trigger("startup")
+@time_trigger
 def install_pkgs():
-    os.system("pip3 install icalendar aiofile")
+    # Install a package on PyPi. Accepts pip compatible package strings.
+    pkgs = ["icalendar", 
+            "aiofile"]
+
+    for pkg in pkgs:
+        # https://github.com/home-assistant/core/blob/dev/homeassistant/util/package.py#L64
+        install_package(package=pkg)

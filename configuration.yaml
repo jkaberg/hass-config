@@ -1,5 +1,4 @@
 sun:
-mqtt:
 energy:
 logbook:
 history:
@@ -26,10 +25,10 @@ logger:
   default: warning
   logs:
     homeassistant: info
-    homeassistant.components.mqtt.light.schema_json: error
+    homeassistant.components.bluetooth: info
     custom_components.pyscript.scripts: debug
     custom_components.localtuya.common: fatal
-    
+
 recorder:
   db_url: !secret psql_string
   db_retry_wait: 15
@@ -42,12 +41,38 @@ recorder:
       - sensor.weather_*
       - pyscript.script*
     entities:
-      - sun.sun # Don't record sun data
-      - sensor.last_boot # Comes from 'systemmonitor' sensor platform
+      - sun.sun
+      - sensor.last_boot
       - sensor.date
+      - sensor.gulvvarme_inngang_value_electric_consumed_4
+      - sensor.vaskerom_vvb_consumption_kwh_corrected
+      - sensor.panelovn_stort_soverom_electric_production_kwh
+      - sensor.panelovn_hovedsoverom_electric_production_kwh
+      - sensor.panelovn_mellom_soverom_electric_production_kwh
+      - sensor.panelovn_litet_soverom_electric_production_kwh
+      - sensor.gulvvarme_bad_1_etg_value_electric_consumed_4
+      - sensor.gulvvarme_tv_stue_value_electric_consumed_4
+      - sensor.utelys_sor_electric_consumption_kwh
+      - sensor.gulvvarme_stue_electric_consumed_kwh_4
+      - sensor.gulvvarme_kjokken_value_electric_consumed_4
+      - sensor.utelys_nord_electric_consumption_kwh
+      - sensor.vaskerom_vaskemaskin_energy
+      - sensor.gulvvarme_bad_2_etg_value_electric_consumed_4
+      - sensor.vaskerom_torketrommel_energy
+      - sensor.vaskerom_avfukter_energy
+      - sensor.panelovn_kontor_electric_production_kwh
+      - sensor.kaffekoker_energy
+      - sensor.kjokken_oppvaskmaskin_energy
     event_types:
       - call_service
-  
+
+ltss:
+  db_url: !secret psql_ltss_string
+  include:
+    domains:
+      - sensor
+      - person
+
 homeassistant:
   customize_glob: !include customize.yaml
    

@@ -1,3 +1,4 @@
+from helpers import is_float
 from homeassistant.helpers import entity_registry, device_registry
 
 decorated_functions = {}
@@ -100,9 +101,8 @@ def check_batteries():
 
             log.debug(f"Setup battery notification for {sensor}")
             
-            @state_trigger(f"float({sensor}) < 20",
-                           f"{sensor} == 'unavailable'",
-                           f"{sensor} == 'unknown'")
+            @state_trigger(f"{float(sensor)} < 20")
+            @state_active(f"{sensor} != 'unavailable'")
             def battery_checker(value=None, var_name=None):
                 _notify(f"Lavt batteri på: {var_name} ({value}%)", title = "Lavt batteri")
 
@@ -114,13 +114,13 @@ def check_batteries():
 
 
 @state_trigger("person.jonas")
-def track_jonas(value=None):
+def track_jonas(value=None, old_value=None):
     value = value.lower()
 
-    if value not in ["not_home"]:
+    if value not in ["not_home", "unknown"] and value != old_value:
         msg = 'sin lokasjon er ukjent'
 
-        if value is 'home':
+        if value == 'home':
             msg = 'er hjemme'
         elif value in ['skolen', 'barnehagen', 'butikken']:
             msg = f'er i {value}'
@@ -129,7 +129,11 @@ def track_jonas(value=None):
 
         _notify(f"Jonas {msg}.")
 
+@state_trigger("binary_sensor.jonas_klokke == 'on'")
+def jonas_watch_battery(value=None, old_value=None):
+    if value != old_value:
+        _notify("Det er lavt batteri på Jonas sin klokke.", speak=True)
 
-@state_trigger("float(sensor.jonas_langen_kaberg_watch_battery) < 35")
-def charge_jonas_watch():
-    _notify("Lavt batteri på Jonas sin klokke.")
+@state_trigger("binary_sensor.garasje_online == 'off'")
+def easee_unavailable():
+    _notify("KRITISK: Billader er utilgjengelig!")

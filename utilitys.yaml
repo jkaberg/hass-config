@@ -1,20 +1,37 @@
+accumulated_energy_cost_monthly_nygaardsvegen:
+  name: "Nygårdsvegen 6 strøm kost per måned"
+  source: sensor.current_energy_cost_nygaardsvegen
+  cycle: monthly
+
+accumulated_energy_cost_daily_nygaardsvegen:
+  name: "Nygårdsvegen 6 strøm kost per dag"
+  source: sensor.current_energy_cost_nygaardsvegen
+  cycle: daily
+
+accumulated_energy_yearly_nygaardsvegen:
+  name: "Nygårdsvegen 6 strøm forbruk per år"
+  source: sensor.energy_per_hour2
+  cycle: yearly
+
+accumulated_energy_monthly_nygaardsvegen:
+  name: "Nygårdsvegen 6 strøm forbruk per måned"
+  source: sensor.energy_per_hour2
+  cycle: monthly
+
+accumulated_energy_daily_nygaardsvegen:
+  name: "Nygårdsvegen 6 strøm forbruk per dag"
+  source: sensor.energy_per_hour2
+  cycle: daily
+
 accumulated_energy_hourly_nygaardsvegen:
-  name: "Nygårdsvegen 6 Forbruk"
+  name: "Nygårdsvegen 6 strøm forbruk per time"
   source: sensor.energy_per_hour2
   cycle: hourly
 
 accumulated_energy_hourly2:
-  name: "Nygårdsvegen 6 Forbruk"
+  name: "Nygårdsvegen 6 akkumulert forbruk"
   source: sensor.energy_per_hour2
   cycle: hourly
   tariffs:
     - peak
     - offpeak
-
-accumulated_energy_daily:
-  source: sensor.energy_per_hour2
-  cycle: daily
-
-accumulated_energy_monthy:
-  source: sensor.strommaler_energy
-  cycle: monthly

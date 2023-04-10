@@ -74,6 +74,7 @@ def kitchen_light(value=None):
 
 @time_trigger("once(sunrise + 1m)")
 def outdoor_light_sunrise():
+    """ Turn off outside lightning when sunrise """
     utelys = ['switch.utelys'] #, 'switch.localtuya_socket01_2']
 
     switch.turn_off(entity_id=utelys)
@@ -81,6 +82,7 @@ def outdoor_light_sunrise():
 
 @time_trigger("once(sunset - 1m)")
 def outdoor_light_sunset():
+    """ Turn on outside lightning when the sun has set """
     utelys = ['switch.utelys'] #, 'switch.localtuya_socket01_2']
 
     switch.turn_on(entity_id=utelys)

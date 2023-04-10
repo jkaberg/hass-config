@@ -13,7 +13,7 @@ def manage_kitchen_fan_on(var_name=None):
     if var_name == 'binary_sensor.platetopp':
         light.turn_on(entity_id="light.kjokken_viftelys", brightness=255)
 
-@state_trigger("binary_sensor.platetopp == 'off'", "binary_sensor.stekeovn == 'off'", state_hold=900)
+@state_trigger("binary_sensor.platetopp == 'off' and binary_sensor.stekeovn == 'off'", state_hold=600)
 def manage_kitchen_fan_off():
     switch.turn_off(entity_id='switch.kjokken_vifte')
 
