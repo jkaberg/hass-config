@@ -111,3 +111,26 @@ def calc_avg_energy_price():
                               'device_class': 'monetary',
                               'icon': 'mdi:currency-usd',
                               'unit_of_measurement': 'NOK'})
+
+@time_trigger("startup")
+@state_trigger("sensor.nygardsvegen_6_strom_forbruk_per_dag")
+def unknown_energy_consumption():
+    now_time = datetime.today()
+    start_time = now_time.replace(hour=0, minute=0, second=0)
+    my_var_name = 'sensor.unknown_energy_consumption'
+
+    def get_today_stat(sensor_name):
+        values = _get_history(start_time, now_time, [sensor_name]).get(sensor_name)
+        return float(values[-1].state) - float(values[0].state)
+
+    energy_sensors = [k.get('stat_consumption') for k in hass.data['energy_manager'].data.get('device_consumption')]
+    energy_values = sum([get_today_stat(x) for x in energy_sensors if not x == my_var_name])
+    difference = float(sensor.nygardsvegen_6_strom_forbruk_per_dag) - energy_values
+
+    state.set(my_var_name,
+              value=difference,
+              new_attributes={'friendly_name': 'Ukjent forbruk',
+                              'state_class': 'total',
+                              'device_class': 'energy',
+                              'icon': 'mdi:chart-line-variant',
+                              'unit_of_measurement': 'kWh'})
