@@ -86,9 +86,7 @@ def check_batteries():
     blacklist = ['sensor.lenovo_tb_x505f_battery_level', 
                  'sensor.vaerstasjon_battery_level',
                  'sensor.iphone_battery_level',
-                 'sensor.sm_s901b_battery_level',
-                 'sensor.0x0015bc003100d36f_battery',
-                 'sensor.denne_ok_battery']
+                 'sensor.sm_s901b_battery_level']
 
     sensors = state.names("sensor")
     battery_devices = []
@@ -101,12 +99,18 @@ def check_batteries():
 
             log.debug(f"Setup battery notification for {sensor}")
             
-            @state_trigger(f"{float(sensor)} < 20")
-            @state_active(f"{sensor} != 'unavailable'")
-            def battery_checker(value=None, var_name=None):
-                _notify(f"Lavt batteri på: {var_name} ({value}%)", title = "Lavt batteri")
+            @state_trigger(f"{sensor} == 'unavailable'")
+            def availability_checker(value=None, var_name=None):
+                _notify(f"{var_name} er utilgjengelig")
 
-            decorated_functions[sensor] = battery_checker
+            decorated_functions[sensor] = [availability_checker]
+
+            if not state.get(sensor) == 'unavailable':
+                @state_trigger(f"float({sensor}) < 20")
+                def battery_checker(value=None, var_name=None):
+                    _notify(f"Lavt batteri på: {var_name} ({value}%)", title = "Lavt batteri")
+
+                decorated_functions[sensor].append(battery_checker)
 
     for sensor in list(decorated_functions.keys()):
         if sensor not in battery_devices:
@@ -116,18 +120,12 @@ def check_batteries():
 @state_trigger("person.jonas")
 def track_jonas(value=None, old_value=None):
     value = value.lower()
+    locations = {'home': 'er hjemme.',
+                 'skolen': 'er i skolen.',
+                 'butikken': 'er på butikken.'}
 
-    if value not in ["not_home", "unknown"] and value != old_value:
-        msg = 'sin lokasjon er ukjent'
-
-        if value == 'home':
-            msg = 'er hjemme'
-        elif value in ['skolen', 'barnehagen', 'butikken']:
-            msg = f'er i {value}'
-        else:
-            msg = f'er hos {value.capitalize()}'
-
-        _notify(f"Jonas {msg}.")
+    if value in locations.keys() and value != old_value:
+        _notify(f"Jonas {locations.get(value)}")
 
 @state_trigger("binary_sensor.jonas_klokke == 'on'")
 def jonas_watch_battery(value=None, old_value=None):

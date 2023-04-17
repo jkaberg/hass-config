@@ -1,35 +1,48 @@
+accumulated_unknown_consumption_daily_nygaardsvegen:
+  name: "Ukjent strømforbruk"
+  unique_id: accumulated_unknown_consumption_daily_nygaardsvegen
+  source: sensor.unknown_energy_consumption
+  cycle: daily
+
 accumulated_energy_cost_monthly_nygaardsvegen:
   name: "Nygårdsvegen 6 strøm kost per måned"
+  unique_id: accumulated_energy_cost_monthly_nygaardsvegen
   source: sensor.current_energy_cost_nygaardsvegen
   cycle: monthly
 
 accumulated_energy_cost_daily_nygaardsvegen:
   name: "Nygårdsvegen 6 strøm kost per dag"
+  unique_id: accumulated_energy_cost_daily_nygaardsvegen
   source: sensor.current_energy_cost_nygaardsvegen
   cycle: daily
 
 accumulated_energy_yearly_nygaardsvegen:
   name: "Nygårdsvegen 6 strøm forbruk per år"
+  unique_id: accumulated_energy_yearly_nygaardsvegen
   source: sensor.energy_per_hour2
   cycle: yearly
 
 accumulated_energy_monthly_nygaardsvegen:
   name: "Nygårdsvegen 6 strøm forbruk per måned"
+  unique_id: accumulated_energy_monthly_nygaardsvegen
   source: sensor.energy_per_hour2
   cycle: monthly
 
 accumulated_energy_daily_nygaardsvegen:
   name: "Nygårdsvegen 6 strøm forbruk per dag"
+  unique_id: accumulated_energy_daily_nygaardsvegen
   source: sensor.energy_per_hour2
   cycle: daily
 
 accumulated_energy_hourly_nygaardsvegen:
   name: "Nygårdsvegen 6 strøm forbruk per time"
+  unique_id: accumulated_energy_hourly_nygaardsvegen
   source: sensor.energy_per_hour2
   cycle: hourly
 
 accumulated_energy_hourly2:
   name: "Nygårdsvegen 6 akkumulert forbruk"
+  unique_id: accumulated_energy_hourly2
   source: sensor.energy_per_hour2
   cycle: hourly
   tariffs:

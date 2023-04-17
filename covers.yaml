@@ -3,12 +3,8 @@
     garage_port:
       device_class: garage
       friendly_name: "Garage Port"
-      value_template: >-
-            {% if is_state('switch.garasje_port_6', 'on') %}
-              open
-            {% else %}
-              closed
-            {% endif %}
+      value_template: "{{ states('pyscript.GARAGE_DIRECTION') }}"
+      position_template: "{{ states('sensor.ble_opening_percentage_ble_garage_port') | float(0) }}"
       open_cover:
         service: switch.turn_on
         entity_id: switch.garasje_port_5

@@ -52,3 +52,14 @@
     target_temp: 18
     target_temp_step: 0.5
     initial_hvac_mode: "heat"
+
+  - platform: generic_thermostat
+    name: Vaskerom
+    unique_id: "vaskerom_panelovn"
+    heater: switch.vaskerom_panelovn
+    target_sensor: sensor.vaskerom_air_temperature
+    min_temp: 16
+    max_temp: 24
+    target_temp: 16
+    target_temp_step: 0.5
+    initial_hvac_mode: "heat"

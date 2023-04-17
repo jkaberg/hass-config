@@ -113,24 +113,28 @@ def calc_avg_energy_price():
                               'unit_of_measurement': 'NOK'})
 
 @time_trigger("startup")
-@state_trigger("sensor.nygardsvegen_6_strom_forbruk_per_dag")
+@state_trigger("sensor.strommaler_energy")
 def unknown_energy_consumption():
-    now_time = datetime.today()
-    start_time = now_time.replace(hour=0, minute=0, second=0)
-    my_var_name = 'sensor.unknown_energy_consumption'
+    """ Calculate the difference between main power meter and enteties in the energy dashboard """
+#    now_time = datetime.today()
+#    start_time = now_time.replace(hour=0, minute=1, second=0)
+#    my_var_name = 'sensor.unknown_energy_consumption'
 
-    def get_today_stat(sensor_name):
-        values = _get_history(start_time, now_time, [sensor_name]).get(sensor_name)
-        return float(values[-1].state) - float(values[0].state)
+#    def get_stat(sensor_name):
+#        stats = _get_statistic(start_time, now_time, [sensor_name], "hour", "state").get(sensor_name)
+    
+#        return stats[-1].get('state') - stats[0].get('state') if stats is not None else 0.0
 
-    energy_sensors = [k.get('stat_consumption') for k in hass.data['energy_manager'].data.get('device_consumption')]
-    energy_values = sum([get_today_stat(x) for x in energy_sensors if not x == my_var_name])
-    difference = float(sensor.nygardsvegen_6_strom_forbruk_per_dag) - energy_values
+    energy_sensors = [k.get('stat_consumption') for k in hass.data['energy_manager'].data.get('device_consumption') \
+                      if not k.get('stat_consumption') == 'sensor.ukjent_stromforbruk']
+    
+    combined = sum([is_float(state.get(x)) for x in energy_sensors])
+    difference = float(sensor.strommaler_energy) - combined
 
-    state.set(my_var_name,
+    state.set('sensor.unknown_energy_consumption',
               value=difference,
               new_attributes={'friendly_name': 'Ukjent forbruk',
-                              'state_class': 'total',
+                              'state_class': 'total_increasing',
                               'device_class': 'energy',
                               'icon': 'mdi:chart-line-variant',
                               'unit_of_measurement': 'kWh'})

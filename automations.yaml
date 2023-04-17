@@ -1,0 +1,13 @@
+- id: '1681458896745'
+  alias: ESPHome BLE Advertise
+  description: ''
+  trigger:
+  - platform: event
+    event_type: esphome.on_ble_advertise
+  condition: []
+  action:
+  - service: ble_monitor.parse_data
+    data:
+      packet: '{{ trigger.event.data.packet }}'
+      gateway_id: '{{ trigger.event.data.gateway_id }}'
+  mode: single

@@ -13,6 +13,12 @@
   source: sensor.panasonic_ac_power_consumption
   unit_prefix: k
   method: left
+- platform: integration
+  name: kjokken_platetopp_kwh
+  unique_id: kjokken_platetopp_kwh
+  source: sensor.kjokken_platetopp_sensor_power
+  unit_prefix: k
+  method: left
 
 - platform: derivative
   source: sensor.energy_per_hour2
@@ -78,6 +84,7 @@
       unit_of_measurement: 'NOK'
       device_class: 'monetary'
       value_template: "{{ (states('sensor.current_energy_consumption_kwh') | float(0)) * (states('sensor.energy_price_with_tarif') | float(0)) }}"
+
 
 - platform: systemmonitor
   resources:

@@ -1,5 +1,9 @@
 def is_float(string):
+    """ 
+    Will try to cast an string to float, and fallsback to zero if not 
+    This should suffice for both casting and boolean operations.
+    """
     try:
-        return True
+        return float(string)
     except ValueError:
-        return False
+        return 0
