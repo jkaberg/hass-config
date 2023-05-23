@@ -11,7 +11,6 @@ def cast(var_name='media_player.magicmirror', app_name='DashCast'):
         dash_cast.load_url(entity_id=var_name, url=url, force=True)
 
 @state_trigger("binary_sensor.gang_pir_sensor_occupancy")
-#@time_active("range(06:00, 22:30)")
 @state_active("group.someone_home == 'home' and \
                media_player.magicmirror.app_name == 'DashCast'")
 def motion(value=None):

@@ -1,5 +1,5 @@
 from typing import Literal
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
 from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.history import get_significant_states
