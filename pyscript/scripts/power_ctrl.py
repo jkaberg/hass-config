@@ -4,14 +4,25 @@ from history import _get_statistic, _get_history
 
 state.persist("pyscript.PWR_CTRL", default_value=0)
 
+
+def season_heating(var_name=None):
+    season = 'winter'
+    outside_temp = float(sensor.estimated_outside_temp)
+
+    heaters = {'climate.panasonic_ac': {'summer': 18, 'winter': 21}, # gangen
+               'climate.panasonic_ac_3': {'summer': 18, 'winter': 21} # stua
+              }
+    
+    if outside_temp > 15:
+        season = 'summer'
+        
+    return heaters.get(var_name).get(season)
+
 @time_trigger("cron(0 0 1 * *)")
 def energy_tarif():
     """ Set our target energy tarif for current month """
     summer_time = range(4,9) # april til september
-    tarif = 10
-
-    if datetime.now().month in summer_time:
-        tarif = 5
+    tarif = 5 if datetime.now().month in range(4, 9) else 10
 
     state.set('input_select.energy_tariff', value=tarif)
 
@@ -26,7 +37,7 @@ def away_mode(value=None):
 @state_active("input_boolean.away_mode == 'off'")
 def power_tarif(value=None):
     """ Adjust boiler and heating if we go above tresholds
-        The check() function is a very simple state machine
+        The check() function == a very simple state machine
         to keep track of what has been done.
     """
     value = float(value)
@@ -75,8 +86,8 @@ def heating(inactive=False, away_temp_adjust=4):
                'climate.litet_soverom': BEDROOM,
                'climate.gulvvarme_bad_1_etg': BATHROOM,
                'climate.gulvvarme_bad_2_etg': BATHROOM,
-               'climate.panasonic_ac': LIVINGROOM, # gangen
-               'climate.panasonic_ac_3': LIVINGROOM, # stua
+               'climate.panasonic_ac': season_heating('climate.panasonic_ac'), # gangen
+               'climate.panasonic_ac_3': season_heating('climate.panasonic_ac_3'), # stua
                'climate.gulvvarme_inngang': FLOOR_HEATING,
                'climate.gulvvarme_stue': FLOOR_HEATING,
                'climate.gulvvarme_kjokken': FLOOR_HEATING,
@@ -90,7 +101,7 @@ def heating(inactive=False, away_temp_adjust=4):
             temp += value
 
         try:
-            if state.get(heater) is not 'off' and float(state.getattr(heater).get('temperature')) is not temp:
+            if state.get(heater) != 'off' and float(state.getattr(heater).get('temperature')) != temp:
                 climate.set_temperature(entity_id=heater,
                                         temperature=temp)
         except TypeError:

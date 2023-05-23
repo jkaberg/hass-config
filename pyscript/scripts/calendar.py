@@ -23,7 +23,7 @@ async def cal_to_ical(var_name=None, months=2):
         c.add('X-WR-TIMEZONE', 'Europe/Oslo')
         c.add('X-AUTHOR', 'https://github.com/jkaberg')
 
-        for event in events:    
+        for event in events:
             e = Event()
             e.add('description', event.description)
             e.add('uid', str(uuid4()))

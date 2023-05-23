@@ -25,7 +25,7 @@ logger:
   default: warning
   logs:
     homeassistant: info
-    homeassistant.components.bluetooth: info
+#    homeassistant.components.rflink: debug
     custom_components.pyscript.scripts: debug
     custom_components.localtuya.common: fatal
 
@@ -41,7 +41,7 @@ recorder:
       - sensor.weather_*
       - pyscript.script*
     entities:
-      - sun.sun
+#      - sun.sun
       - sensor.last_boot
       - sensor.date
       - sensor.gulvvarme_inngang_value_electric_consumed_4
@@ -73,6 +73,9 @@ ltss:
       - sensor
       - person
 
+#rflink:
+#  port: /dev/ttyUSB0
+
 homeassistant:
   customize_glob: !include customize.yaml
    
@@ -88,6 +91,7 @@ tts:
 
 group: !include groups.yaml
 cover: !include covers.yaml
+light: !include lights.yaml
 camera: !include camera.yaml
 notify: !include notify.yaml
 sensor: !include sensors.yaml

@@ -2,15 +2,15 @@
                "input_boolean.away_mode",
                "input_boolean.force_evcharge",
                "binary_sensor.priceanalyzer_is_ten_cheapest")
+@state_active("input_boolean.away_mode == 'off'")
 def on_off():
+    eid = "switch.garasje_is_enabled"
+
     if 'on' in [input_boolean.force_evcharge, binary_sensor.priceanalyzer_is_ten_cheapest] \
-               and sensor.garasje_status in ['awaiting_start', 'ready_to_charge', 'charging'] \
-               and input_boolean.away_mode == 'off':
-        if switch.garasje_is_enabled == 'off':
-            switch.turn_on(entity_id="switch.garasje_is_enabled")
-    else: # off
-        if switch.garasje_is_enabled == 'on':
-            switch.turn_off(entity_id="switch.garasje_is_enabled")
+               and sensor.garasje_status in ['awaiting_start', 'ready_to_charge', 'charging']:
+        switch.turn_on(entity_id=eid)
+    else:
+        switch.turn_off(entity_id=eid)
 
 @state_trigger("switch.garasje_is_enabled",
                "sensor.estimated_hourly_consumption")

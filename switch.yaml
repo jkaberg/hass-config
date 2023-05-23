@@ -27,3 +27,7 @@
           entity_id:
             - switch.utelys_nord
             - switch.utelys_sor
+
+- platform: rflink
+  devices:
+    fa20rf_0c8a80_01: {}

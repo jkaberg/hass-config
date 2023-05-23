@@ -1,3 +1,6 @@
+- platform: rflink
+  automatic_add: true
+
 - platform: time_date
   display_options:
     - 'time'
@@ -7,6 +10,7 @@
   unique_id: energy_per_hour2
   source: sensor.strommaler_power
   unit_prefix: k
+  method: left
 - platform: integration
   name: panasonic_ac_2_consumption_kwh
   unique_id: panasonic_ac_2_consumption_kwh
@@ -17,6 +21,12 @@
   name: kjokken_platetopp_kwh
   unique_id: kjokken_platetopp_kwh
   source: sensor.kjokken_platetopp_sensor_power
+  unit_prefix: k
+  method: left
+- platform: integration
+  name: vaskerom_vvb_kwh
+  unique_id: vaskerom_vvb_kwh
+  source: sensor.vaskerom_vvb_watt_corrected
   unit_prefix: k
   method: left
 
@@ -48,10 +58,10 @@
 
 - platform: template
   sensors:
-    azimuth:
-      friendly_name: "Sun Azimuth"
-      unit_of_measurement: 'degrees'
-      value_template: "{{ state_attr('sun.sun', 'azimuth') }}"
+    panasonic_ac_inside_temperature:
+      friendly_name: "Inside Temperature"
+      unit_of_measurement: '°C'
+      value_template: "{{ state_attr('climate.panasonic_ac', 'current_temperature') }}"
     vaskerom_vvb_temp_corrected:
       friendly_name: "VVB temperatur justert"
       icon_template: mdi:coolant-temperature

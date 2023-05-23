@@ -1,12 +1,6 @@
-from time import sleep
-
 from homeassistant.helpers import entity_registry
 
-#################
-# Indoor lights #
-#################
-
-def _get_light_devices():
+def turn_off_zwave_lights(remove_lights = []):
     ent_reg = entity_registry.async_get(hass)
     lights = {}
 
@@ -18,14 +12,10 @@ def _get_light_devices():
                 lights[device.platform] = [device.entity_id]
             else:
                 lights[device.platform].append(device.entity_id)
+
+    for light in remove_lights:
+        lights.get('zwave_js').remove(light)
     
-    return lights
-
-@state_trigger("group.someone_home == 'not_home'", state_hold=300)
-def nobody_home():
-    lights = _get_light_devices()
-
-    # z-wave multicast shut down all lights
     zwave_js.multicast_set_value(entity_id=lights.get('zwave_js'),
                                  command_class='38',
                                  property='targetValue',
@@ -33,33 +23,37 @@ def nobody_home():
 
 @time_trigger("once(sunrise)")
 def sunrise():
-    switch.turn_off(entity_id="switch.all_lights")
+    lights = ["switch.all_lights", "switch.utelys"] #, 'switch.localtuya_socket01_2']
 
-@time_trigger("once(05:30)", "once(sunset)")
-@time_active("range(05:30, sunrise)", "range(sunset, 22:00)")
-def morning_sunset_light():
-    switches = ['switch.sunset_sunrise_lights', 'switch.night_lights']
+    switch.turn_off(entity_id=lights)
+    turn_off_zwave_lights()
 
-    switch.turn_on(entity_id=switches)
+@time_trigger("once(sunset)")
+def sunset(trigger_time=None):
+    lights = ['switch.night_lights', 'switch.utelys'] #, 'switch.localtuya_socket01_2']
 
-# Nattbelysning
+    if trigger_time.hour < 22 and sun.sun == 'below_horizon':
+        lights.append('switch.sunset_sunrise_lights')
+
+    switch.turn_on(entity_id=lights)
+
+@time_trigger("once(05:30)")
+@state_active("sun.sun == 'below_horizon'")
+def morning_light():
+    lights = ['switch.sunset_sunrise_lights']
+
+    switch.turn_on(entity_id=lights)
+
 @time_trigger("once(22:30)")
 def night_light():
-    lights = _get_light_devices()
-    zigbee_lights = ["switch.sunset_sunrise_lights", "light.kjokken_viftelys"]
+    lights = ["switch.sunset_sunrise_lights", "switch.kjokken_viftelys"]
 
-    switch.turn_off(entity_id="switch.sunset_sunrise_lights")
-    light.turn_off(entity_id="light.kjokken_viftelys")
+    switch.turn_off(entity_id=lights)
+    turn_off_zwave_lights(remove_lights=['light.taklys_litet_soverom'])
 
-    # markus rom
-    if group.someone_home == 'home':
-        lights.get('zwave_js').remove('light.taklys_litet_soverom')
-
-    # z-wave multicast shut down all lights
-    zwave_js.multicast_set_value(entity_id=lights.get('zwave_js'),
-                                 command_class='38',
-                                 property='targetValue',
-                                 value=0)
+@state_trigger("group.someone_home == 'not_home'", state_hold=300)
+def nobody_home():
+    turn_off_zwave_lights()
 
 @state_trigger("light.taklys_kjokken", "light.taklys_kjokken.brightness")
 def kitchen_light(value=None):
@@ -67,22 +61,3 @@ def kitchen_light(value=None):
         light.turn_on(entity_id="light.kjokken_viftelys", brightness=255) #float(light.taklys_kjokken.brightness))
     else:
         light.turn_off(entity_id="light.kjokken_viftelys")
-
-##################
-# Outdoor lights #
-##################
-
-@time_trigger("once(sunrise + 1m)")
-def outdoor_light_sunrise():
-    """ Turn off outside lightning when sunrise """
-    utelys = ['switch.utelys'] #, 'switch.localtuya_socket01_2']
-
-    switch.turn_off(entity_id=utelys)
-
-
-@time_trigger("once(sunset - 1m)")
-def outdoor_light_sunset():
-    """ Turn on outside lightning when the sun has set """
-    utelys = ['switch.utelys'] #, 'switch.localtuya_socket01_2']
-
-    switch.turn_on(entity_id=utelys)

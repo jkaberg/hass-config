@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from helpers import is_float
 from homeassistant.helpers import entity_registry, device_registry
 
@@ -40,7 +42,7 @@ def windows_open_and_rainfall(value=None):
 
     if value in rainfall:
         for device in devices:
-            # window open (== on)?
+            # window open (is on)?
             if state.get(device) == 'on':
                 dev_name = _get_pretty_name(device)
                 device_name = dev_name.replace('_contact', '')
@@ -55,7 +57,7 @@ def windows_open_and_rainfall(value=None):
 
             _notify(title="Lukk vinduer!", msg=msg, speak=True)
 
-@state_trigger("float(sensor.kjeller_ytterdor_sensor_temperature) <= 3")
+@state_trigger("float(sensor.kjeller_ytterdor_sensor_temperature) < 3")
 def cold_basement():
     _notify(title="Det er kaldt i kjelleren",
             msg=f"Det er nå {sensor.kjeller_ytterdor_sensor_temperature}°C i kjelleren.")
@@ -120,6 +122,9 @@ def check_batteries():
 @state_trigger("person.jonas")
 def track_jonas(value=None, old_value=None):
     value = value.lower()
+
+    if datetime.now().hour == 3: return
+
     locations = {'home': 'er hjemme.',
                  'skolen': 'er i skolen.',
                  'butikken': 'er på butikken.'}
@@ -129,6 +134,8 @@ def track_jonas(value=None, old_value=None):
 
 @state_trigger("binary_sensor.jonas_klokke == 'on'")
 def jonas_watch_battery(value=None, old_value=None):
+    if datetime.now().hour == 3: return
+
     if value != old_value:
         _notify("Det er lavt batteri på Jonas sin klokke.", speak=True)
 

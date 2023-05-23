@@ -3,7 +3,6 @@ from history import _get_statistic, _get_history
 
 from datetime import datetime, timedelta
 
-
 @time_trigger("startup",
               "cron(*/5 * * * *)")
 def estimate_power_usage(var_name="sensor.nygardsvegen_6_strom_forbruk_per_time"):
@@ -32,15 +31,9 @@ def energy_price_with_tarif(value=None):
     now = datetime.now()
 
     if now.month in range(0, 2): # jan, feb, march
-        if now.hour in range(6, 21):
-            tarif_price = 0.3020 # winter day
-        else:
-            tarif_price = 0.2145 # winter night
+        tarif_price = 0.3020 if now.hour in range(6, 21) else 0.2145
     else:
-        if now.hour in range(6, 21):
-            tarif_price = 0.3855 # summer day
-        else:
-            tarif_price = 0.2980 # summer night
+        tarif_price = 0.3855 if now.hour in range(6, 21) else 0.2980
 
     price = round(tarif_price + value, 3)
 
@@ -116,15 +109,6 @@ def calc_avg_energy_price():
 @state_trigger("sensor.strommaler_energy")
 def unknown_energy_consumption():
     """ Calculate the difference between main power meter and enteties in the energy dashboard """
-#    now_time = datetime.today()
-#    start_time = now_time.replace(hour=0, minute=1, second=0)
-#    my_var_name = 'sensor.unknown_energy_consumption'
-
-#    def get_stat(sensor_name):
-#        stats = _get_statistic(start_time, now_time, [sensor_name], "hour", "state").get(sensor_name)
-    
-#        return stats[-1].get('state') - stats[0].get('state') if stats is not None else 0.0
-
     energy_sensors = [k.get('stat_consumption') for k in hass.data['energy_manager'].data.get('device_consumption') \
                       if not k.get('stat_consumption') == 'sensor.ukjent_stromforbruk']
     
@@ -138,3 +122,28 @@ def unknown_energy_consumption():
                               'device_class': 'energy',
                               'icon': 'mdi:chart-line-variant',
                               'unit_of_measurement': 'kWh'})
+
+
+@time_trigger("startup",
+              "cron(0 5 * * *)")
+def estimate_outside_temp_day():
+    count = 0
+    total_temperature = 0
+    current_date = datetime.now().date()
+
+    for item in weather.hjem_hourly.forecast:
+        datetime_obj = datetime.fromisoformat(item['datetime'])
+
+        if datetime_obj.date() == current_date and 9 <= datetime_obj.hour <= 19:
+            total_temperature += item['temperature']
+            count += 1
+    
+    if not count > 0: return
+
+    avg_temp = total_temperature / count
+
+    state.set('sensor.estimated_outside_temp',
+              value=round(avg_temp, 3),
+              new_attributes={'device_class': 'temperature',
+                              'icon': 'mdi:thermometer',
+                              'unit_of_measurement': '°C'})

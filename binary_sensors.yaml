@@ -52,3 +52,7 @@
     priceanalyzer_is_ten_cheapest:
       friendly_name: "Price Analyzer - Laveste 10h strømpris"
       value_template: "{{ state_attr('sensor.priceanalyzer_tr_heim_2', 'current_hour').is_ten_cheapest }}"
+
+- platform: rflink
+  devices:
+    fa20rf_0c8a80_01: {}
