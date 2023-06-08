@@ -125,16 +125,18 @@ def unknown_energy_consumption():
 
 
 @time_trigger("startup",
-              "cron(0 5 * * *)")
+              "cron(0 1 * * *)")
 def estimate_outside_temp_day():
     count = 0
+    start_time = 9
+    stop_time = 19
     total_temperature = 0
     current_date = datetime.now().date()
 
     for item in weather.hjem_hourly.forecast:
         datetime_obj = datetime.fromisoformat(item['datetime'])
 
-        if datetime_obj.date() == current_date and 9 <= datetime_obj.hour <= 19:
+        if datetime_obj.date() == current_date and start_time <= datetime_obj.hour <= stop_time:
             total_temperature += item['temperature']
             count += 1
     

@@ -5,20 +5,32 @@ from history import _get_statistic, _get_history
 state.persist("pyscript.PWR_CTRL", default_value=0)
 
 
-def season_heating(var_name=None):
+def season_heating(heater_type=None):
+    estimated_outside_temp = float(sensor.estimated_outside_temp)
+
     season = 'winter'
-    outside_temp = float(sensor.estimated_outside_temp)
 
-    heaters = {'climate.panasonic_ac': {'summer': 18, 'winter': 21}, # gangen
-               'climate.panasonic_ac_3': {'summer': 18, 'winter': 21} # stua
+    # season and temperature, the temperature when to consider with in range of the season.
+    seasons = {'midseason': 8, # spring, autumn
+               'summer': 16}
+
+    for s, temp in seasons.items():
+        if estimated_outside_temp > temp:
+            season = s
+
+    heaters = {
+               'bathroom': {'summer': 22, 'midseason': 23, 'winter': 24},
+               'bedroom': {'summer': 'off', 'midseason': 20, 'winter': 20},
+               'main_bedroom': {'summer': 'off', 'midseason': 'off', 'winter': 18},
+               'floorheating': {'summer': 21, 'midseason': 23, 'winter': 23},
+               'livingroom': {'summer': 'off', 'midseason': 21, 'winter': 21}
               }
-    
-    if outside_temp > 15:
-        season = 'summer'
-        
-    return heaters.get(var_name).get(season)
 
-@time_trigger("cron(0 0 1 * *)")
+    log.debug(f"season: {season} | outside estimated temp: {estimated_outside_temp} | temp: {temp} | heater type: {heater_type}")
+        
+    return heaters.get(heater_type).get(season)
+
+#@time_trigger("cron(0 0 1 * *)")
 def energy_tarif():
     """ Set our target energy tarif for current month """
     summer_time = range(4,9) # april til september
@@ -30,7 +42,8 @@ def energy_tarif():
 def away_mode(value=None):
     away = True if value == 'on' else False
 
-    boiler(inactive=away)
+    # TODO: Consider re-enable this? Does it make sense? 
+    #boiler(inactive=away)
     heating(inactive=away)
 
 @state_trigger("sensor.nygardsvegen_6_forbruk")
@@ -56,15 +69,27 @@ def power_tarif(value=None):
     elif value == 0:
         pyscript.PWR_CTRL = 0
 
-@state_trigger("binary_sensor.priceanalyzer_is_five_cheapest")
+#@state_trigger("binary_sensor.priceanalyzer_is_ten_cheapest")
+#@time_trigger("cron(0 * * * *)")
+#@state_active("input_boolean.away_mode == 'off'")
+#def boiler(inactive=False):
+#    """ Handle boiler with regard to five cheapest hours """
+#    if binary_sensor.priceanalyzer_is_ten_cheapest == 'on' and not inactive:
+#      switch.turn_on(entity_id='switch.vaskerom_vvb')
+#    else:
+#      switch.turn_off(entity_id='switch.vaskerom_vvb')
+
+
 @time_trigger("cron(0 * * * *)")
 @state_active("input_boolean.away_mode == 'off'")
 def boiler(inactive=False):
-    """ Handle boiler with regard to five cheapest hours """
-    if binary_sensor.priceanalyzer_is_five_cheapest == 'on' and not inactive:
-      switch.turn_on(entity_id='switch.vaskerom_vvb')
-    else:
-      switch.turn_off(entity_id='switch.vaskerom_vvb')
+    """ Handle boiler with regard to cheapest hours """
+    value = float(sensor.vvbsensor_tr_heim)
+
+    if inactive:
+        value = 40
+
+    climate.set_temperature(entity_id='climate.varmtvannsbereder', temperature=value)
 
 @state_trigger("sensor.priceanalyzer_tr_heim_2")
 @time_trigger("cron(0 * * * *)")
@@ -73,37 +98,42 @@ def heating(inactive=False, away_temp_adjust=4):
     """ Handle heating using the heat capicator apphroach """
     value = -abs(away_temp_adjust) if inactive else float(sensor.priceanalyzer_tr_heim_2)
 
-    BATHROOM = 25
-    BEDROOM = 20
-    LIVINGROOM = 21
-    FLOOR_HEATING = 23
-
     # climate entity: setpoint
-    heaters = {'climate.inngang': LIVINGROOM,
-               'climate.hovedsoverom': 18,
-               'climate.stort_soverom': BEDROOM,
-               'climate.mellom_soverom': BEDROOM,
-               'climate.litet_soverom': BEDROOM,
-               'climate.gulvvarme_bad_1_etg': BATHROOM,
-               'climate.gulvvarme_bad_2_etg': BATHROOM,
-               'climate.panasonic_ac': season_heating('climate.panasonic_ac'), # gangen
-               'climate.panasonic_ac_3': season_heating('climate.panasonic_ac_3'), # stua
-               'climate.gulvvarme_inngang': FLOOR_HEATING,
-               'climate.gulvvarme_stue': FLOOR_HEATING,
-               'climate.gulvvarme_kjokken': FLOOR_HEATING,
-               'climate.gulvvarme_tv_stue': FLOOR_HEATING,
-               'climate.panelovn_kontor': LIVINGROOM}
+    heaters = {'climate.inngang': season_heating('livingroom'),
+               'climate.hovedsoverom': season_heating('main_bedroom'),
+               'climate.stort_soverom': season_heating('bedroom'),
+               'climate.mellom_soverom': season_heating('bedroom'),
+               'climate.litet_soverom': season_heating('bedroom'),
+               'climate.gulvvarme_bad_1_etg': season_heating('bathroom'),
+               'climate.gulvvarme_bad_2_etg': season_heating('bathroom'),
+               'climate.panasonic_ac': season_heating('livingroom'),
+               'climate.panasonic_ac_3': season_heating('livingroom'),
+               'climate.gulvvarme_inngang': season_heating('floorheating'),
+               'climate.gulvvarme_stue': season_heating('floorheating'),
+               'climate.gulvvarme_kjokken': season_heating('floorheating'),
+               'climate.gulvvarme_tv_stue': season_heating('floorheating'),
+               'climate.panelovn_kontor': season_heating('livingroom')}
 
     for heater, temp in heaters.items():
-        if value > 0 and 'panasonic' in heater:
-            pass
+        log.debug(f"processing heater {heater} and temp/value {temp}")
+
+        if temp == 'off' and state.get(heater) != 'off':
+            log.debug(f"turning off {heater}")
+            climate.set_hvac_mode(entity_id=heater,
+                                  hvac_mode='off')
         else:
             temp += value
 
-        try:
-            if state.get(heater) != 'off' and float(state.getattr(heater).get('temperature')) != temp:
-                climate.set_temperature(entity_id=heater,
-                                        temperature=temp)
-        except TypeError:
-            # device unavilable or similar.
-            pass
+            try:
+                if state.get(heater) == 'off':
+                    log.debug(f"turning on {heater}")
+                    climate.set_hvac_mode(entity_id=heater,
+                                          hvac_mode='heat')
+
+                if float(state.getattr(heater).get('temperature')) != temp:
+                    log.debug(f"setting temp {temp} on {heater}")
+                    climate.set_temperature(entity_id=heater,
+                                            temperature=temp)
+            except TypeError:
+                # device unavilable or similar.
+                pass

@@ -27,12 +27,12 @@ def heatpump_normal():
     if datetime.now().month in range(4, 10):
         climate.set_preset_mode(entity_id='climate.panasonic_ac_3', preset_mode='Normal')
 
-@state_trigger("float(sensor.vaskerom_humidity) > 40")
+@state_trigger("float(sensor.vaskerom_humidity) > 45")
 @state_active("switch.vaskerom_avfukter == 'off'")
 def humidifier_on():
     switch.turn_on(entity_id='switch.vaskerom_avfukter')
 
-@state_trigger("float(sensor.vaskerom_humidity) < 40")
+@state_trigger("float(sensor.vaskerom_humidity) < 35")
 @state_active("switch.vaskerom_avfukter == 'on'")
 def humidifier_off():
     switch.turn_off(entity_id='switch.vaskerom_avfukter')
