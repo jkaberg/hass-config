@@ -14,6 +14,7 @@ def season_heating(heater_type=None):
     seasons = {'midseason': 8, # spring, autumn
                'summer': 16}
 
+    # check if estimated outside temp above treshold for season
     for s, temp in seasons.items():
         if estimated_outside_temp > temp:
             season = s
@@ -26,8 +27,9 @@ def season_heating(heater_type=None):
                'livingroom': {'summer': 'off', 'midseason': 21, 'winter': 21}
               }
 
-    log.debug(f"season: {season} | outside estimated temp: {estimated_outside_temp} | temp: {temp} | heater type: {heater_type}")
-        
+#    log.debug(f"season: {season} | outside estimated temp: {estimated_outside_temp} | temp: {temp} | heater type: {heater_type}")
+    
+    # return the setpoint temp for the (estimated) season for this heater type
     return heaters.get(heater_type).get(season)
 
 #@time_trigger("cron(0 0 1 * *)")
@@ -69,17 +71,6 @@ def power_tarif(value=None):
     elif value == 0:
         pyscript.PWR_CTRL = 0
 
-#@state_trigger("binary_sensor.priceanalyzer_is_ten_cheapest")
-#@time_trigger("cron(0 * * * *)")
-#@state_active("input_boolean.away_mode == 'off'")
-#def boiler(inactive=False):
-#    """ Handle boiler with regard to five cheapest hours """
-#    if binary_sensor.priceanalyzer_is_ten_cheapest == 'on' and not inactive:
-#      switch.turn_on(entity_id='switch.vaskerom_vvb')
-#    else:
-#      switch.turn_off(entity_id='switch.vaskerom_vvb')
-
-
 @time_trigger("cron(0 * * * *)")
 @state_active("input_boolean.away_mode == 'off'")
 def boiler(inactive=False):
@@ -99,15 +90,14 @@ def heating(inactive=False, away_temp_adjust=4):
     value = -abs(away_temp_adjust) if inactive else float(sensor.priceanalyzer_tr_heim_2)
 
     # climate entity: setpoint
-    heaters = {'climate.inngang': season_heating('livingroom'),
-               'climate.hovedsoverom': season_heating('main_bedroom'),
+    heaters = {'climate.hovedsoverom': season_heating('main_bedroom'),
                'climate.stort_soverom': season_heating('bedroom'),
                'climate.mellom_soverom': season_heating('bedroom'),
                'climate.litet_soverom': season_heating('bedroom'),
                'climate.gulvvarme_bad_1_etg': season_heating('bathroom'),
                'climate.gulvvarme_bad_2_etg': season_heating('bathroom'),
-               'climate.panasonic_ac': season_heating('livingroom'),
-               'climate.panasonic_ac_3': season_heating('livingroom'),
+               'climate.panasonic_ac': season_heating('livingroom'), #gangen
+               'climate.panasonic_ac_3': season_heating('livingroom'), #2etasje
                'climate.gulvvarme_inngang': season_heating('floorheating'),
                'climate.gulvvarme_stue': season_heating('floorheating'),
                'climate.gulvvarme_kjokken': season_heating('floorheating'),
@@ -115,23 +105,24 @@ def heating(inactive=False, away_temp_adjust=4):
                'climate.panelovn_kontor': season_heating('livingroom')}
 
     for heater, temp in heaters.items():
-        log.debug(f"processing heater {heater} and temp/value {temp}")
+        #log.debug(f"processing heater {heater} and temp/value {temp}")
 
-        if temp == 'off' and state.get(heater) != 'off':
-            log.debug(f"turning off {heater}")
-            climate.set_hvac_mode(entity_id=heater,
-                                  hvac_mode='off')
+        if temp == 'off':
+            if state.get(heater) != 'off':
+                #log.debug(f"turning off {heater}")
+                climate.set_hvac_mode(entity_id=heater,
+                                      hvac_mode='off')
         else:
             temp += value
 
             try:
                 if state.get(heater) == 'off':
-                    log.debug(f"turning on {heater}")
+                    #log.debug(f"turning on {heater}")
                     climate.set_hvac_mode(entity_id=heater,
                                           hvac_mode='heat')
 
                 if float(state.getattr(heater).get('temperature')) != temp:
-                    log.debug(f"setting temp {temp} on {heater}")
+                    #log.debug(f"setting temp {temp} on {heater}")
                     climate.set_temperature(entity_id=heater,
                                             temperature=temp)
             except TypeError:
