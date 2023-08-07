@@ -1,24 +1,3 @@
-- platform: template
-  covers:
-    garage_port:
-      device_class: garage
-      friendly_name: "Garage Port"
-      value_template: >-
-            {% if is_state('switch.garasje_port_6', 'on') %}
-              open
-            {% else %}
-              closed
-            {% endif %}
-      open_cover:
-        service: switch.turn_on
-        entity_id: switch.garasje_port_5
-      close_cover:
-        service: switch.turn_on
-        entity_id: switch.garasje_port_5
-      stop_cover:
-        service: switch.turn_on
-        entity_id: switch.garasje_port_5
-
 - platform: rflink
   devices:
     brelmotor_cefb3f_05:

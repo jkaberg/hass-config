@@ -73,8 +73,8 @@ ltss:
       - sensor
       - person
 
-#rflink:
-#  port: /dev/ttyUSB0
+rflink:
+  port: /dev/ttyUSB0
 
 homeassistant:
   customize_glob: !include customize.yaml

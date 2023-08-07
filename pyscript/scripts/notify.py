@@ -88,7 +88,8 @@ def check_batteries():
     blacklist = ['sensor.lenovo_tb_x505f_battery_level', 
                  'sensor.vaerstasjon_battery_level',
                  'sensor.iphone_battery_level',
-                 'sensor.sm_s901b_battery_level']
+                 'sensor.sm_s901b_battery_level',
+                 'sensor.jonas_langen_kaberg_watch_battery']
 
     sensors = state.names("sensor")
     battery_devices = []

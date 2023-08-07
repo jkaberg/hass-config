@@ -28,6 +28,6 @@ def adjust_limits():
     current = max([x for x in limits if x <= remaining_current]) if remaining_current > 0 else 0
 
     if float(sensor.garasje_dynamic_charger_limit) != current:
-        log.debug(f"Adjusting EV charger limit to {current}A, previously {sensor.garasje_dynamic_charger_limit}A")
+        log.debug(f"Adjusting EV charger limit to {current}A, previously {sensor.garasje_dynamic_charger_limit}A (Remaining power: {remaining_power} | Treshhold: {threshold}")
 
         easee.set_charger_dynamic_limit(charger_id='EHCQPVGQ', current=current)

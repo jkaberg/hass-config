@@ -23,17 +23,17 @@ def turn_off_zwave_lights(remove_lights = []):
 
 @time_trigger("once(sunrise)")
 def sunrise():
-    lights = ["switch.all_lights", "switch.utelys"] #, 'switch.localtuya_socket01_2']
+    lights = ["switch.all_lights", "switch.utelys_sor", "switch.utelys_nord"] #, 'switch.localtuya_socket01_2']
 
     switch.turn_off(entity_id=lights)
     turn_off_zwave_lights()
 
 @time_trigger("once(sunset)")
 def sunset(trigger_time=None):
-    lights = ['switch.night_lights', 'switch.utelys'] #, 'switch.localtuya_socket01_2']
+    lights = ["switch.night_lights", "switch.utelys_sor", "switch.utelys_nord"] #, 'switch.localtuya_socket01_2']
 
-    if trigger_time.hour < 22 and sun.sun == 'below_horizon':
-        lights.append('switch.sunset_sunrise_lights')
+    if trigger_time.hour in range(14, 22):
+        lights.append("switch.sunset_sunrise_lights")
 
     switch.turn_on(entity_id=lights)
 

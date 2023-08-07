@@ -12,7 +12,7 @@ def season_heating(heater_type=None):
 
     # season and temperature, the temperature when to consider with in range of the season.
     seasons = {'midseason': 8, # spring, autumn
-               'summer': 16}
+               'summer': 12}
 
     # check if estimated outside temp above treshold for season
     for s, temp in seasons.items():
@@ -29,7 +29,6 @@ def season_heating(heater_type=None):
 
 #    log.debug(f"season: {season} | outside estimated temp: {estimated_outside_temp} | temp: {temp} | heater type: {heater_type}")
     
-    # return the setpoint temp for the (estimated) season for this heater type
     return heaters.get(heater_type).get(season)
 
 #@time_trigger("cron(0 0 1 * *)")
@@ -44,17 +43,11 @@ def energy_tarif():
 def away_mode(value=None):
     away = True if value == 'on' else False
 
-    # TODO: Consider re-enable this? Does it make sense? 
-    #boiler(inactive=away)
     heating(inactive=away)
 
 @state_trigger("sensor.nygardsvegen_6_forbruk")
 @state_active("input_boolean.away_mode == 'off'")
 def power_tarif(value=None):
-    """ Adjust boiler and heating if we go above tresholds
-        The check() function == a very simple state machine
-        to keep track of what has been done.
-    """
     value = float(value)
     energy_tarif = float(input_select.energy_tariff)
 
@@ -72,22 +65,22 @@ def power_tarif(value=None):
         pyscript.PWR_CTRL = 0
 
 @time_trigger("cron(0 * * * *)")
-@state_active("input_boolean.away_mode == 'off'")
 def boiler(inactive=False):
     """ Handle boiler with regard to cheapest hours """
     value = float(sensor.vvbsensor_tr_heim)
 
-    if inactive:
+    if inactive or input_boolean.away_mode == 'on':
         value = 40
 
     climate.set_temperature(entity_id='climate.varmtvannsbereder', temperature=value)
 
 @state_trigger("sensor.priceanalyzer_tr_heim_2")
 @time_trigger("cron(0 * * * *)")
-@state_active("input_boolean.away_mode == 'off'")
-def heating(inactive=False, away_temp_adjust=4):
-    """ Handle heating using the heat capicator apphroach """
-    value = -abs(away_temp_adjust) if inactive else float(sensor.priceanalyzer_tr_heim_2)
+def heating(inactive=False):
+    value = float(sensor.priceanalyzer_tr_heim_2)
+
+    if inactive or input_boolean.away_mode == 'on':
+        value = -abs(4)
 
     # climate entity: setpoint
     heaters = {'climate.hovedsoverom': season_heating('main_bedroom'),
@@ -107,7 +100,9 @@ def heating(inactive=False, away_temp_adjust=4):
     for heater, temp in heaters.items():
         #log.debug(f"processing heater {heater} and temp/value {temp}")
 
-        if temp == 'off':
+        if temp == 'disabled':
+            continue
+        elif temp == 'off':
             if state.get(heater) != 'off':
                 #log.debug(f"turning off {heater}")
                 climate.set_hvac_mode(entity_id=heater,
