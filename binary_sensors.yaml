@@ -45,6 +45,10 @@
       device_class: battery
       icon_template: mdi:watch
       value_template: "{{ states('sensor.jonas_langen_kaberg_watch_battery') | float(0) < 35.0 }}"
+    dark_outside:
+      friendly_name: "Mørkt ute"
+      icon_template: mdi:wb_twighlight
+      value_template: "{{ states('sensor.st_00117532_belysningsstyrke') | float(0) < 350.0 }}"
 
     priceanalyzer_is_five_cheapest:
       friendly_name: "Price Analyzer - Laveste 5h strømpris"
@@ -52,7 +56,3 @@
     priceanalyzer_is_ten_cheapest:
       friendly_name: "Price Analyzer - Laveste 10h strømpris"
       value_template: "{{ state_attr('sensor.priceanalyzer_tr_heim_2', 'current_hour').is_ten_cheapest }}"
-
-- platform: rflink
-  devices:
-    fa20rf_0c8a80_01: {}

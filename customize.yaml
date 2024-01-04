@@ -9,3 +9,11 @@ sensor.accumulated_energy_hourly2_offpeak:
     device_class: energy
     unit_of_measurement: kWh
     state_class: total_increasing
+
+sensor.garage_temperature:
+  unit_of_measurement: 'C'
+  icon: mdi:thermometer
+
+sensor.garage_humidity:
+  unit_of_measurement: '%'
+  icon: mdi:water-percent

@@ -7,3 +7,5 @@ global:
   magicmirror_apikey: !secret magicmirror_apikey
   magicmirror_url: !secret magicmirror_url
   longlived_access_token: !secret longlived_access_token
+  infoscreen_password: !secret infoscreen_password
+  infoscreen_url: !secret infoscreen_url

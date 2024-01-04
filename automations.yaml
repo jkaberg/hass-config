@@ -1,13 +1,1233 @@
-- id: '1681458896745'
-  alias: ESPHome BLE Advertise
+- id: '1702816490900'
+  alias: 'Varsel: Lavt batteri på enheter'
+  description: ''
+  use_blueprint:
+    path: Blackshome/low-battery-notifications-and-actions.yaml
+    input:
+      include_time: time_enabled
+      time: '20:00:00'
+      include_easy_notify: enable_easy_okay_notify
+      exclude_sensors:
+        entity_id:
+        - sensor.vaerstasjon_battery_level
+      notify_title: Lav batteri på enheter
+      notify_device:
+      - 0e0bb68fcc1bd538b39f57389b006f9b
+      notify_message: all_sensors
+      weekday_options:
+      - sun
+      - sat
+      - fri
+      - thu
+      - wed
+      - tue
+      - mon
+- id: '1702816913102'
+  alias: 'Varsel: Oppvaskemaskin er ferdig'
+  description: Varsel når vaskemaskinen er ferdig
+  use_blueprint:
+    path: Blackshome/appliance-notifications.yaml
+    input:
+      power_sensor: sensor.kjokken_oppvaskmaskin_power
+      start_notify_device: []
+      start_title: Vaskemaskin
+      include_end_notify: enable_end_notify_options
+      end_message_title: Oppvaskemaskin ferdig
+      end_notify_device:
+      - e6ed03c591dd3aa311f816fbeeb9b336
+      - 0e0bb68fcc1bd538b39f57389b006f9b
+      end_message: Oppvaskemaskin er ferdig!
+      include_custom_actions:
+      - enable_end_custom_actions
+      end_custom_actions:
+      - service: media_player.play_media
+        target:
+          entity_id: media_player.nestmini7392
+        data:
+          media_content_id: media-source://tts/google_translate?message=Oppvaskemaskinen+er+ferdig%21&language=no
+          media_content_type: provider
+        metadata:
+          title: Oppvaskemaskinen er ferdig!
+          thumbnail: https://brands.home-assistant.io/_/google_translate/logo.png
+          media_class: app
+          children_media_class:
+          navigateIds:
+          - {}
+          - media_content_type: app
+            media_content_id: media-source://tts
+          - media_content_type: provider
+            media_content_id: media-source://tts/google_translate?message=Oppvaskemaskinen+er+ferdig%21&language=no
+      end_time_delay: 8
+- id: '1702817090287'
+  alias: 'Varsel: Vaskemaskinen er ferdig'
+  description: Varsle når vaskemaskinen er ferdig
+  use_blueprint:
+    path: Blackshome/appliance-notifications.yaml
+    input:
+      power_sensor: sensor.vaskerom_vaskemaskin_power
+      include_end_notify: enable_end_notify_options
+      end_notify_device:
+      - 0e0bb68fcc1bd538b39f57389b006f9b
+      - e6ed03c591dd3aa311f816fbeeb9b336
+      end_message_title: Vaskemaskin ferdig
+      end_message: Vaskemaskinen er ferdig!
+      include_custom_actions:
+      - enable_end_custom_actions
+      end_custom_actions:
+      - service: media_player.play_media
+        target:
+          entity_id: media_player.nestmini7392
+        data:
+          media_content_id: media-source://tts/google_translate?message=Vaskemaskinen+er+ferdig%21&language=no
+          media_content_type: provider
+        metadata:
+          title: Vaskemaskinen er ferdig!
+          thumbnail: https://brands.home-assistant.io/_/google_translate/logo.png
+          media_class: app
+          children_media_class:
+          navigateIds:
+          - {}
+          - media_content_type: app
+            media_content_id: media-source://tts
+          - media_content_type: provider
+            media_content_id: media-source://tts/google_translate?message=Vaskemaskinen+er+ferdig%21&language=no
+      end_time_delay: 5
+- id: '1702817159441'
+  alias: 'Varsel: Tørketrommelen er ferdig'
+  description: Varsle når tørketrommelen er ferdig
+  use_blueprint:
+    path: Blackshome/appliance-notifications.yaml
+    input:
+      power_sensor: sensor.vaskerom_torketrommel_power
+      include_end_notify: enable_end_notify_options
+      end_notify_device:
+      - e6ed03c591dd3aa311f816fbeeb9b336
+      - 0e0bb68fcc1bd538b39f57389b006f9b
+      end_message_title: Tørketrommelen ferdig
+      end_message: Tørketrommelen er ferdig!
+      include_custom_actions:
+      - enable_end_custom_actions
+      end_custom_actions:
+      - service: media_player.play_media
+        target:
+          entity_id: media_player.nestmini7392
+        data:
+          media_content_id: media-source://tts/google_translate?message=T%C3%B8rketrommelen+er+ferdig%21&language=no
+          media_content_type: provider
+        metadata:
+          title: Tørketrommelen er ferdig!
+          thumbnail: https://brands.home-assistant.io/_/google_translate/logo.png
+          media_class: app
+          children_media_class:
+          navigateIds:
+          - {}
+          - media_content_type: app
+            media_content_id: media-source://tts
+          - media_content_type: provider
+            media_content_id: media-source://tts/google_translate?message=T%C3%B8rketrommelen+er+ferdig%21&language=no
+      end_time_delay: 5
+      end_appliance_power: 3
+- id: '1703956720055'
+  alias: 'Varsel: Plastemballasje tømmes'
   description: ''
   trigger:
-  - platform: event
-    event_type: esphome.on_ble_advertise
+  - platform: time
+    at: 07:00:00
+  - platform: time
+    at: '19:00:00'
+  condition:
+  - condition: state
+    entity_id: calendar.tommeplan
+    attribute: message
+    state: Plastemballasje
+  - condition: template
+    value_template: '{{ as_timestamp(states.calendar.tommeplan.attributes.start_time)
+      | timestamp_custom(''%Y-%m-%d'') in [now().strftime(''%Y-%m-%d''), (now() +
+      timedelta(days=1)).strftime(''%Y-%m-%d'')] }}'
+  action:
+  - service: notify.varsle_telefoner
+    data:
+      message: Plastemballasje tømmes {% if as_timestamp(states.calendar.tommeplan.attributes.start_time)
+        | timestamp_custom('%Y-%m-%d') == now().strftime('%Y-%m-%d') %}i dag.{% else
+        %}i morgen.{% endif %}
+  mode: single
+- id: '1703957259059'
+  alias: 'Garasje: Håndtere porten'
+  description: ''
+  trigger:
+  - platform: numeric_state
+    entity_id: sensor.garage_humidity
+    above: 65
+    id: høy-fuktighet
+  - platform: numeric_state
+    entity_id: sensor.garage_humidity
+    below: 60
+    id: lav-fuktighet
+  - platform: state
+    entity_id:
+    - group.someone_home
+    to: not_home
+    id: borte
+    for:
+      hours: 0
+      minutes: 2
+      seconds: 0
+  - platform: time
+    at: '22:30:00'
+    id: natt
   condition: []
   action:
-  - service: ble_monitor.parse_data
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - høy-fuktighet
+      - condition: time
+        after: 06:00:00
+        before: '22:30:00'
+      - condition: state
+        entity_id: sensor.garage_door_detailed_status
+        state: closed
+      sequence:
+      - service: switch.turn_on
+        target:
+          entity_id: switch.garage_door_vent
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - lav-fuktighet
+      - condition: time
+        after: 06:00:00
+        before: '22:30:00'
+      - condition: state
+        entity_id: sensor.garage_door_detailed_status
+        state: venting
+      sequence:
+      - service: cover.close_cover
+        target:
+          entity_id: cover.garage_door
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - borte
+        - natt
+      sequence:
+      - service: cover.close_cover
+        target:
+          entity_id: cover.garage_door
+        data: {}
+  mode: single
+- id: '1703958652880'
+  alias: 'TV Stua: Håndtere screens kortvegg'
+  description: ''
+  trigger:
+  - platform: numeric_state
+    entity_id: sensor.st_00117532_belysningsstyrke
+    above: 10000
+    for: 00:02:00
+    id: det-er-sol
+  - platform: numeric_state
+    entity_id: sensor.st_00117532_belysningsstyrke
+    below: 7000
+    for: 00:20:00
+    id: ingen-sol
+  - platform: numeric_state
+    entity_id:
+    - sensor.st_00117532_vindstyrke
+    above: 20
+    for:
+      hours: 0
+      minutes: 5
+      seconds: 0
+    id: mye-vind
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - det-er-sol
+      - condition: state
+        entity_id: cover.screen_kortvegg
+        state: open
+      - condition: numeric_state
+        entity_id: sensor.sun_solar_azimuth
+        above: 157
+        below: 330
+      - condition: numeric_state
+        entity_id: sensor.st_00117532_vindstyrke
+        below: 20
+      sequence:
+      - service: cover.close_cover
+        target:
+          entity_id: cover.screen_kortvegg
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - ingen-sol
+        - mye-vind
+      - condition: state
+        entity_id: cover.screen_kortvegg
+        state: closed
+      sequence:
+      - service: cover.open_cover
+        target:
+          entity_id: cover.screen_kortvegg
+        data: {}
+  mode: single
+- id: '1703959144048'
+  alias: 'Felles: Tving Varmepumpene over på varme hvis auto'
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - climate.panasonic_ac
+    to: heat_cool
+    id: inngang
+  - platform: state
+    entity_id:
+    - climate.panasonic_ac_3
+    to: heat_cool
+    id: stua
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - inngang
+      sequence:
+      - service: climate.set_hvac_mode
+        target:
+          entity_id: climate.panasonic_ac
+        data:
+          hvac_mode: heat
+    - conditions:
+      - condition: trigger
+        id:
+        - stua
+      sequence:
+      - service: climate.set_hvac_mode
+        target:
+          entity_id: climate.panasonic_ac_3
+        data:
+          hvac_mode: heat
+  mode: single
+- id: '1703959445213'
+  alias: 'Vaskerom: Veksle avfukter ved luftfuktighet'
+  description: ''
+  trigger:
+  - platform: numeric_state
+    entity_id:
+    - sensor.vaskerom_humidity
+    below: 40
+    id: av
+  - platform: numeric_state
+    entity_id:
+    - sensor.vaskerom_humidity
+    above: 60
+    id: på
+  action:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - av
+      - condition: state
+        entity_id: switch.vaskerom_avfukter
+        state: 'on'
+      sequence:
+      - service: switch.turn_off
+        target:
+          entity_id: switch.vaskerom_avfukter
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - på
+      - condition: state
+        entity_id: switch.vaskerom_avfukter
+        state: 'off'
+      sequence:
+      - service: switch.turn_on
+        target:
+          entity_id: switch.vaskerom_avfukter
+        data: {}
+  mode: single
+- id: '1703960225498'
+  alias: 'Inngang: Ringeklokke ringelyd på høytalere'
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - binary_sensor.front_door_ding
+    to: 'on'
+  condition:
+  - condition: state
+    entity_id: group.someone_home
+    state: home
+  - condition: time
+    after: 08:30:00
+    before: '18:30:00'
+  action:
+  - service: media_player.play_media
+    target:
+      entity_id:
+      - media_player.gminis
+      device_id: []
+      area_id: []
     data:
-      packet: '{{ trigger.event.data.packet }}'
-      gateway_id: '{{ trigger.event.data.gateway_id }}'
+      media_content_id: https://hast.eth0.sh/local/audio/doorbell.mp3
+      media_content_type: music
+      announce: true
+  mode: single
+- id: '1704022463153'
+  alias: 'Kjøkken: Synkronisere taklys med viftelys'
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - light.taklys_kjokken
+    to: 'on'
+    id: 'on'
+  - platform: state
+    entity_id:
+    - light.taklys_kjokken
+    to: 'off'
+    id: 'off'
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - 'on'
+      sequence:
+      - service: light.turn_on
+        target:
+          entity_id: light.kjokken_viftelys
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - 'off'
+      sequence:
+      - service: light.turn_off
+        target:
+          entity_id: light.kjokken_viftelys
+        data: {}
+  mode: single
+- id: '1704034126221'
+  alias: 'Kjøkken: Håndtere ventilator'
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - binary_sensor.platetopp
+    to: 'on'
+    id: platetopp-på
+  - platform: state
+    entity_id:
+    - binary_sensor.platetopp
+    to: 'off'
+    for:
+      hours: 0
+      minutes: 15
+      seconds: 0
+    id: platetopp-av
+  - platform: state
+    entity_id:
+    - binary_sensor.stekeovn
+    to: 'on'
+    id: stekeovn-på
+  - platform: state
+    entity_id:
+    - binary_sensor.stekeovn
+    to: 'off'
+    for:
+      hours: 0
+      minutes: 15
+      seconds: 0
+    id: stekeovn-av
+  condition: []
+  action:
+  - parallel:
+    - choose:
+      - conditions:
+        - condition: trigger
+          id:
+          - platetopp-på
+          - stekeovn-på
+        sequence:
+        - service: switch.turn_on
+          target:
+            entity_id: switch.kjokken_vifte
+          data: {}
+      - conditions:
+        - condition: trigger
+          id:
+          - platetopp-av
+          - stekeovn-av
+        sequence:
+        - service: switch.turn_off
+          target:
+            entity_id: switch.kjokken_vifte
+          data: {}
+      alias: Veksle viftemotor av/på
+    - choose:
+      - conditions:
+        - condition: trigger
+          id:
+          - platetopp-på
+        sequence:
+        - service: light.turn_on
+          target:
+            entity_id:
+            - light.kjokken_viftelys
+            device_id: []
+            area_id: []
+          data:
+            brightness: 255
+      - conditions:
+        - condition: trigger
+          id:
+          - platetopp-av
+        - condition: state
+          entity_id: light.taklys_kjokken
+          state: 'off'
+        sequence:
+        - service: light.turn_off
+          target:
+            entity_id:
+            - light.kjokken_viftelys
+            device_id: []
+            area_id: []
+          data: {}
+      alias: Veksle viftelys av/på
+  mode: single
+- id: '1704054953570'
+  alias: 'Internett: veksle av/på'
+  description: ''
+  trigger:
+  - platform: time
+    at: 00:00:05
+    id: 'off'
+  - platform: time
+    at: 08:00:00
+    id: på
+  condition:
+  - condition: time
+    weekday:
+    - mon
+    - tue
+    - wed
+    - thu
+    - fri
+    - sat
+    - sun
+  action:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - 'off'
+      sequence:
+      - service: switch.turn_on
+        target:
+          entity_id: switch.gw_mgmt_lan_filter_rule_1692694478_homeassistant_block_internet_2
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - på
+      sequence:
+      - service: switch.turn_off
+        target:
+          entity_id: switch.gw_mgmt_lan_filter_rule_1692694478_homeassistant_block_internet_2
+        data: {}
+  mode: single
+- id: '1704062468309'
+  alias: 'Stua: Veksle infoskjerm ved bevegelse'
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - binary_sensor.stua_pir_sensor_occupancy
+    to: 'on'
+    id: bevegelse
+  - platform: state
+    entity_id:
+    - binary_sensor.stua_pir_sensor_occupancy
+    to: 'off'
+    id: stille
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - bevegelse
+      sequence:
+      - service: switch.turn_on
+        target:
+          entity_id: switch.infoskjerm_screen
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - stille
+      sequence:
+      - service: switch.turn_off
+        target:
+          entity_id: switch.infoskjerm_screen
+        data: {}
+  mode: single
+- id: '1704106993941'
+  alias: 'Belysning: Håndtere belysning inne og ute'
+  description: ''
+  trigger:
+  - platform: time
+    at: 05:30:00
+    id: morgen
+  - platform: state
+    entity_id:
+    - binary_sensor.dark_outside
+    to: 'on'
+    for:
+      hours: 0
+      minutes: 5
+      seconds: 0
+    id: mørkt-ute
+  - platform: state
+    entity_id:
+    - binary_sensor.dark_outside
+    to: 'off'
+    for:
+      hours: 0
+      minutes: 5
+      seconds: 0
+    id: lyst-ute
+  - platform: time
+    at: '22:30:00'
+    id: natt
+  - platform: state
+    entity_id:
+    - group.someone_home
+    to: not_home
+    for:
+      hours: 0
+      minutes: 5
+      seconds: 0
+    id: ingen-hjemme
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - morgen
+      - condition: state
+        entity_id: binary_sensor.dark_outside
+        state: 'on'
+      sequence:
+      - service: switch.turn_on
+        target:
+          entity_id: switch.sunset_sunrise_lights
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - lyst-ute
+      sequence:
+      - parallel:
+        - service: zwave_js.multicast_set_value
+          data:
+            value: 0
+            command_class: '38'
+            property: targetValue
+          target:
+            entity_id: "{% set lights = namespace(entities=[]) %} {% for entity in
+              integration_entities('zwave_js') if 'light' in entity %}\n  {% set lights.entities
+              = lights.entities + [entity] %}\n{% endfor %} {{ lights.entities | join(',')
+              }}\n"
+        - service: switch.turn_off
+          target:
+            entity_id:
+            - switch.all_lights
+            - switch.utelys_sor
+            - switch.utelys_nord
+            - switch.localtuya_socket01
+            - switch.localtuya_socket01_2
+          data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - mørkt-ute
+      sequence:
+      - service: switch.turn_on
+        target:
+          entity_id:
+          - switch.night_lights
+          - switch.utelys_sor
+          - switch.utelys_nord
+          - switch.localtuya_socket01
+          - switch.localtuya_socket01_2
+          - switch.sunset_sunrise_lights
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - natt
+      sequence:
+      - parallel:
+        - service: zwave_js.multicast_set_value
+          data:
+            value: 0
+            command_class: '38'
+            property: targetValue
+          target:
+            entity_id: "{% set lights = namespace(entities=[]) %}  {% for entity in
+              integration_entities('zwave_js') if 'light' in entity %}\n  {% set lights.entities
+              = lights.entities + [entity] %}\n{% endfor %} {{ lights.entities | join(',')
+              }}\n"
+        - service: switch.turn_off
+          target:
+            entity_id:
+            - switch.kjokken_vifte
+            - switch.sunset_sunrise_lights
+            device_id: []
+            area_id: []
+          data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - ingen-hjemme
+      sequence:
+      - service: zwave_js.multicast_set_value
+        data:
+          value: 0
+          command_class: '38'
+          property: targetValue
+        target:
+          entity_id: "{% set lights = namespace(entities=[]) %} {% for entity in integration_entities('zwave_js')
+            if 'light' in entity %}\n  {% set lights.entities = lights.entities +
+            [entity] %}\n{% endfor %} {{ lights.entities | join(',') }}\n"
+  mode: single
+- id: '1704108522334'
+  alias: 'System: Last inn integrasjon ved feil'
+  description: ''
+  trigger:
+  - platform: time
+    at: '15:00:00'
+  - platform: time
+    at: '18:00:00'
+  - platform: time
+    at: '21:00:00'
+  - platform: time
+    at: '23:00:00'
+  condition: []
+  action:
+  - parallel:
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: '"{{ state_attr(''sensor.priceanalyzer_tr_heim_2'', ''raw_tomorrow'')
+            is none }}"'
+        sequence:
+        - service: homeassistant.reload_config_entry
+          target:
+            entity_id: sensor.priceanalyzer_tr_heim_2
+          data: {}
+      alias: Sjekk Priceanalyzer
+    - choose:
+      - conditions:
+        - condition: template
+          value_template: '"{{ state_attr(''sensor.nordpool_kwh_trheim_nok_3_00_0'',
+            ''raw_tomorrow'') is none }}"'
+        sequence:
+        - service: homeassistant.reload_config_entry
+          target:
+            entity_id: sensor.nordpool_kwh_trheim_nok_3_00_0
+          data: {}
+      alias: Sjekk Nordpool
+  mode: single
+- id: '1704120520936'
+  alias: 'Kjøkken: Kaffekoker timer'
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - binary_sensor.kaffekoker
+    to: 'on'
+    for:
+      hours: 0
+      minutes: 30
+      seconds: 0
+    id: på
+  - platform: state
+    entity_id:
+    - binary_sensor.kaffekoker
+    to: 'off'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 5
+    id: av
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - på
+      sequence:
+      - service: switch.turn_off
+        target:
+          entity_id: switch.kaffekoker_2
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - av
+      sequence:
+      - service: switch.turn_on
+        target:
+          entity_id: switch.kaffekoker_2
+        data: {}
+  mode: single
+- id: '1704121045304'
+  alias: 'System: Håndtere tarif (peak/offpeak)'
+  description: ''
+  trigger:
+  - platform: time
+    at: 06:00:00
+    id: morgen
+  - platform: time
+    at: '22:00:00'
+    id: natt
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - morgen
+      sequence:
+      - service: select.select_option
+        target:
+          entity_id: select.accumulated_energy_hourly2
+        data:
+          option: peak
+      alias: Sett tarif til peak
+    - conditions:
+      - condition: trigger
+        id:
+        - natt
+      sequence:
+      - service: select.select_option
+        target:
+          entity_id: select.accumulated_energy_hourly2
+        data:
+          option: offpeak
+      alias: Sett tarif til offpeak
+  mode: single
+- id: '1704121537735'
+  alias: 'Inngang: Cast MagicMirror til speil'
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - media_player.magicmirror
+  - platform: time_pattern
+    minutes: /1
+  condition:
+  - condition: template
+    value_template: '{{ state_attr(''media_player.magicmirror'', ''app_name'') !=
+      ''DashCast'' }}'
+  action:
+  - service: dash_cast.load_url
+    data:
+      force: true
+      entity_id: media_player.magicmirror
+      url: https://magicmirror.eth0.sh/
+  mode: single
+- id: '1704266926218'
+  alias: 'Varsel: Det er kaldt i kjelleren'
+  description: ''
+  trigger:
+  - platform: numeric_state
+    entity_id:
+    - sensor.kjeller_yttre_sensor_temperature
+    below: 3
+  condition: []
+  action:
+  - service: notify.mobile_app_sm_s901b
+    data:
+      message: Det er nå {{ trigger.to_state }}°C i kjelleren.
+      title: Det er kaldt i kjelleren
+  mode: single
+- id: '1704268362920'
+  alias: 'Varsel: Nedbør og takvinduer'
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - weather.hjem
+  condition:
+  - condition: template
+    value_template: '{{ trigger.to_state in [''hail'', ''lightning'', ''lightning-rainy'',
+      ''pouring'', ''rainy'', ''snowy'', ''snowy-rainy''] }}'
+  action:
+  - variables:
+      open_windows: "{%- set windows = namespace(devices='') %} {%- for device in
+        ['binary_sensor.loftstue_takvindu_nord_contact', 'binary_sensor.loftstue_takvindu_sor_contact',
+        'binary_sensor.trapp_takvindu_contact'] %}\n  {%- if is_state(device, 'on')
+        %}\n    {%- if windows.devices == '' %}\n      {%- set windows.devices = state_attr(device,
+        'friendly_name') %}\n    {%- else %}\n      {%- set windows.devices = windows.devices
+        + ', ' + state_attr(device, 'friendly_name') %}\n    {%- endif %}\n  {%- endif
+        %}\n{%- endfor %} {{ windows.devices }}\n"
+  - parallel:
+    - service: notify.varsle_telefoner
+      data:
+        title: Lukk takvinduer!
+        message: '{{ open_windows }} er åpne, og det er meldt nedbør.'
+    - if:
+      - condition: state
+        entity_id: group.someone_home
+        state: home
+      - condition: time
+        after: 08:00:00
+        before: '22:00:00'
+      then:
+      - service: tts.speak
+        data:
+          cache: true
+          message: '{{ open_windows }} er åpne, og det er meldt nedbør.'
+          media_player_entity_id: media_player.gminis
+- id: '1704269708255'
+  alias: 'Varsel: Når billader er utilgjengelig'
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - binary_sensor.garasje_online
+    to: 'off'
+  condition: []
+  action:
+  - service: notify.mobile_app_sm_s901b
+    data:
+      message: 'KRITISK: Billader er utilgjengelig!'
+  mode: single
+- id: '1704269856111'
+  alias: 'Inngang: Håndtere ytterdør lås'
+  description: ''
+  trigger:
+  - platform: time
+    at: 06:30:00
+    id: morgen
+  - platform: time
+    at: '22:30:00'
+    id: natt
+  - platform: state
+    entity_id:
+    - group.someone_home
+    to: home
+    id: hjemme
+  - platform: state
+    entity_id:
+    - group.someone_home
+    to: not_home
+    id: ingen-hjemme
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - natt
+      - condition: state
+        entity_id: lock.hoveddor
+        state: unlocked
+      sequence:
+      - parallel:
+        - service: lock.lock
+          target:
+            entity_id: lock.hoveddor
+          data: {}
+        - if:
+          - condition: state
+            entity_id: switch.hoveddor_auto_relock
+            state: 'off'
+          then:
+          - service: switch.turn_on
+            target:
+              entity_id: switch.hoveddor_auto_relock
+            data: {}
+      alias: Det er natt
+    - conditions:
+      - condition: trigger
+        id:
+        - morgen
+        - hjemme
+      - condition: state
+        entity_id: lock.hoveddor
+        state: locked
+      - condition: time
+        after: 06:00:00
+        before: '22:29:00'
+      - condition: state
+        entity_id: group.someone_home
+        state: home
+      sequence:
+      - parallel:
+        - service: lock.unlock
+          target:
+            entity_id: lock.hoveddor
+          data: {}
+        - if:
+          - condition: state
+            entity_id: switch.hoveddor_auto_relock
+            state: 'on'
+          then:
+          - service: switch.turn_off
+            target:
+              entity_id: switch.hoveddor_auto_relock
+            data: {}
+      alias: Det er morgen og/eller noen hjemme
+    - conditions:
+      - condition: trigger
+        id:
+        - ingen-hjemme
+      - condition: state
+        entity_id: lock.hoveddor
+        state: unlocked
+      sequence:
+      - service: lock.lock
+        target:
+          entity_id: lock.hoveddor
+        data: {}
+      alias: Ingen hjemme
+  mode: single
+- id: '1704273478835'
+  alias: 'TV Stua: Administrere screens kortvegg automasjon'
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - automation.ta_ned_kortvegg_screens_ved_sol
+    from: 'on'
+    to: 'off'
+    for:
+      hours: 3
+      minutes: 0
+      seconds: 0
+    id: gjennoppta
+  - platform: state
+    entity_id:
+    - cover.screen_kortvegg
+    id: screen-endret
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - gjennoppta
+      sequence:
+      - service: automation.turn_on
+        target:
+          entity_id: automation.ta_ned_kortvegg_screens_ved_sol
+        data: {}
+    - conditions:
+      - condition: trigger
+        id:
+        - screen-endret
+      - condition: template
+        value_template: '{{ trigger.to_state.context.id != none }}'
+      - condition: template
+        value_template: '{{ trigger.to_state.context.parent_id == none }}'
+      - condition: template
+        value_template: '{{ trigger.to_state.context.user_id == none }}'
+      sequence:
+      - service: automation.turn_off
+        target:
+          entity_id: automation.tv_stua_administrere_screens_kortvegg_automasjon
+        data:
+          stop_actions: true
+  mode: single
+- id: '1704280361008'
+  alias: 'Garasje: Håndtere elbillader'
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - binary_sensor.priceanalyzer_is_ten_cheapest
+    id: lavpris-on
+    to: 'on'
+  - platform: state
+    entity_id:
+    - binary_sensor.priceanalyzer_is_ten_cheapest
+    to: 'off'
+    id: lavpris-off
+  - platform: state
+    entity_id:
+    - input_boolean.force_evcharge
+    id: force-on
+    to: 'on'
+  - platform: state
+    entity_id:
+    - input_boolean.force_evcharge
+    to: 'off'
+    id: force-off
+  - platform: state
+    entity_id:
+    - switch.garasje_is_enabled
+    to: 'on'
+    id: billader-aktiv
+  - platform: time_pattern
+    minutes: /2
+    id: minute-trigger
+  condition:
+  - condition: state
+    entity_id: input_boolean.away_mode
+    state: 'off'
+  action:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - billader-aktiv
+        - minute-trigger
+      - condition: state
+        entity_id: switch.garasje_is_enabled
+        state: 'on'
+      - alias: No action for the first 5 minutes of an hour
+        condition: template
+        value_template: '{{ now().minute >= 5 }}'
+      sequence:
+      - service: easee.set_charger_dynamic_limit
+        data:
+          charger_id: EHCQPVGQ
+          current: '{%- set limits = [0, 6, 10, 13, 16, 20, 25, 32] %}  {%- set consumption
+            = states.sensor.energy_estimate_this_hour.state | float(0) %}  {%- set
+            treshold = states.sensor.energy_level_upper_threshold.state | float(0)
+            - 0.6 %} {%- set remaining_current = (((treshold - consumption) + states.sensor.garasje_power.state
+            | float(0)) * 1000) / 230 %}  {%- set limiter = limits | select(''le'',remaining_current)  |
+            list | max %} {{ limiter if limiter > 0 else 0 }}
+
+            '
+      alias: Justere strømstyrke på billader etter grenseverdi
+    - conditions:
+      - condition: trigger
+        id:
+        - lavpris-on
+        - force-on
+      sequence:
+      - service: switch.turn_on
+        target:
+          entity_id: switch.garasje_is_enabled
+        data: {}
+      alias: Skru på billader
+    - conditions:
+      - condition: trigger
+        id:
+        - lavpris-off
+        - force-off
+      sequence:
+      - service: switch.turn_off
+        target:
+          entity_id: switch.garasje_is_enabled
+        data: {}
+      alias: Skru av billader
+  mode: single
+- id: '1704291389386'
+  alias: 'Vaskerom: Håndtere VVB'
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - sensor.vvbsensor_tr_heim
+    id: temp-endring
+  - platform: template
+    value_template: '{{ states.sensor.energy_used_this_hour.state | float(0) >= (states.sensor.energy_level_upper_threshold.state
+      | float(0) - 0.4) }}'
+    alias: Sjekk om forbruk overstiger nåværende kapasitetsledd
+    id: hoyt-forbruk
+  - platform: state
+    entity_id:
+    - input_boolean.away_mode
+    to: 'on'
+    id: borte
+  - platform: state
+    entity_id:
+    - input_boolean.away_mode
+    to: 'off'
+    id: hjemme
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - temp-endring
+        - hjemme
+      - condition: state
+        entity_id: input_boolean.away_mode
+        state: 'off'
+      sequence:
+      - service: climate.set_temperature
+        target:
+          entity_id: climate.varmtvannsbereder
+        data:
+          temperature: '{{ states.sensor.vvbsensor_tr_heim.state }}
+
+            '
+    - conditions:
+      - condition: trigger
+        id:
+        - hoyt-forbruk
+        - borte
+      sequence:
+      - service: climate.set_temperature
+        target:
+          entity_id: climate.varmtvannsbereder
+        data:
+          temperature: 40
+  mode: single
+- id: '1704299027912'
+  alias: 'Inngang: Håndtere MagicMirror'
+  description: ''
+  trigger:
+  - platform: state
+    entity_id:
+    - binary_sensor.gang_pir_sensor_occupancy
+    to: 'on'
+    id: bevegelse
+  - platform: state
+    entity_id:
+    - binary_sensor.gang_pir_sensor_occupancy
+    to: 'off'
+    id: stille
+  condition: []
+  action:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - bevegelse
+      sequence:
+      - service: pyscript.magicmirror_motion
+        data:
+          value: 'on'
+    - conditions:
+      - condition: trigger
+        id:
+        - stille
+      sequence:
+      - service: pyscript.magicmirror_motion
+        data:
+          value: 'off'
   mode: single

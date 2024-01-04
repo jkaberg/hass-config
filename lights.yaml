@@ -1,2 +1,2 @@
 - platform: rflink
-  automatic_add: true
+  automatic_add: false

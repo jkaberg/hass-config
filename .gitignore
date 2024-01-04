@@ -5,6 +5,7 @@
 pyscript/scripts/doors.py
 blueprints/
 custom_components/
+custom_templates/
 deps/
 tts/
 www/
@@ -13,6 +14,7 @@ image/
 *.py[cod]
 .HA_VERSION
 .omv_cookies.json
+.shopping_list.json
 google_service_account.json
 home-assistant_v2.db*
 home-assistant.log*

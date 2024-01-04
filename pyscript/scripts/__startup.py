@@ -2,6 +2,7 @@ import sys
 from homeassistant.util.package import install_package
 
 if "/config/pyscript/modules" not in sys.path:
+    sys.path.append("/config/pyscript/scripts")
     sys.path.append("/config/pyscript/modules")
 
 @time_trigger
