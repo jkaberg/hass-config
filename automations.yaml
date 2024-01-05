@@ -1064,12 +1064,12 @@
   trigger:
   - platform: state
     entity_id:
-    - binary_sensor.priceanalyzer_is_ten_cheapest
+    - sensor.energy_is_8_lowest
     id: lavpris-on
     to: 'on'
   - platform: state
     entity_id:
-    - binary_sensor.priceanalyzer_is_ten_cheapest
+    - sensor.energy_is_8_lowest
     to: 'off'
     id: lavpris-off
   - platform: state
@@ -1147,10 +1147,6 @@
   alias: 'Vaskerom: Håndtere VVB'
   description: ''
   trigger:
-  - platform: state
-    entity_id:
-    - sensor.vvbsensor_tr_heim
-    id: temp-endring
   - platform: template
     value_template: '{{ states.sensor.energy_used_this_hour.state | float(0) >= (states.sensor.energy_level_upper_threshold.state
       | float(0) - 0.4) }}'
@@ -1166,25 +1162,29 @@
     - input_boolean.away_mode
     to: 'off'
     id: hjemme
+  - platform: state
+    entity_id:
+    - sensor.energy_is_4_lowest
+    to: 'on'
+    id: veldig-billig
+  - platform: state
+    entity_id:
+    - sensor.energy_is_8_lowest
+    to: 'on'
+    id: billig
+  - platform: state
+    entity_id:
+    - sensor.energy_is_8_highest
+    to: 'on'
+    id: dyrt
+  - platform: state
+    entity_id:
+    - sensor.energy_is_4_highest
+    to: 'on'
+    id: veldig-dyrt
   condition: []
   action:
   - choose:
-    - conditions:
-      - condition: trigger
-        id:
-        - temp-endring
-        - hjemme
-      - condition: state
-        entity_id: input_boolean.away_mode
-        state: 'off'
-      sequence:
-      - service: climate.set_temperature
-        target:
-          entity_id: climate.varmtvannsbereder
-        data:
-          temperature: '{{ states.sensor.vvbsensor_tr_heim.state }}
-
-            '
     - conditions:
       - condition: trigger
         id:
@@ -1196,6 +1196,59 @@
           entity_id: climate.varmtvannsbereder
         data:
           temperature: 40
+    - conditions:
+      - condition: trigger
+        id:
+        - veldig-billig
+      - condition: state
+        entity_id: input_boolean.away_mode
+        state: 'off'
+      sequence:
+      - service: climate.set_temperature
+        target:
+          entity_id: climate.varmtvannsbereder
+        data:
+          temperature: 80
+    - conditions:
+      - condition: trigger
+        id:
+        - billig
+        - hjemme
+      - condition: state
+        entity_id: input_boolean.away_mode
+        state: 'off'
+      sequence:
+      - service: climate.set_temperature
+        target:
+          entity_id: climate.varmtvannsbereder
+        data:
+          temperature: 65
+    - conditions:
+      - condition: trigger
+        id:
+        - dyrt
+      - condition: state
+        entity_id: input_boolean.away_mode
+        state: 'off'
+      sequence:
+      - service: climate.set_temperature
+        target:
+          entity_id: climate.varmtvannsbereder
+        data:
+          temperature: 55
+    - conditions:
+      - condition: trigger
+        id:
+        - veldig-dyrt
+      - condition: state
+        entity_id: input_boolean.away_mode
+        state: 'off'
+      sequence:
+      - service: climate.set_temperature
+        target:
+          entity_id: climate.varmtvannsbereder
+        data:
+          temperature: 45
   mode: single
 - id: '1704299027912'
   alias: 'Inngang: Håndtere MagicMirror'

@@ -98,7 +98,7 @@
       unique_id: sensor.current_energy_cost_kwh
       unit_of_measurement: 'NOK'
       device_class: 'monetary'
-      value_template: "{{ (states('sensor.current_energy_consumption_kwh') | float(0)) * (states('sensor.nordpool_kwh_trheim_nok_3_10_025') | float(0)) }}"
+      value_template: "{{ (states('sensor.current_energy_consumption_kwh') | float(0)) * (states('sensor.energy_price') | float(0)) }}"
 
 
 - platform: systemmonitor
