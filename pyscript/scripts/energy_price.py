@@ -1,6 +1,11 @@
+import pytz
 import requests
 from datetime import datetime, timezone, timedelta
 
+def current_time():
+    dt = datetime.now()
+    tz = pytz.timezone('Europe/Oslo')
+    return tz.localize(dt)
 
 def find_current_hour(prices, time):
     for hour in prices:
@@ -11,10 +16,10 @@ def find_current_hour(prices, time):
 
 def calc_price(value, time):
     # based on: https://ts.tensio.no/kunde/nettleie-priser-og-avtaler
-    support_price = 0.9125
+    treshold = 0.9125
 
-    if value > support_price:
-        value = ((value - support_price) * 0.1) + support_price
+    if value > treshold:
+        value = ((value - treshold) * 0.1) + treshold
 
     if time.month in range(0, 2): # jan, feb, march
         tarif_price = 0.3020 if time.hour in range(6, 21) else 0.2145
@@ -46,9 +51,12 @@ def mark_price(data, time_window, direction='lowest'):
 @time_trigger("startup", "once(14:00)")
 def fetch_prices(zone='NO3'):
     prices = []
-    now = datetime.now(timezone.utc)
-    price_windows = [4, 8]
+    now = current_time()
     next_day = now + timedelta(days=1)
+
+    directions = ['lowest', 'highest'] # price directions
+    price_windows = [4, 8] # hours
+
     urls = [
         f'https://www.hvakosterstrommen.no/api/v1/prices/{now.year}/{now.month:02d}-{now.day:02d}_{zone}.json',
         f'https://www.hvakosterstrommen.no/api/v1/prices/{now.year}/{now.month:02d}-{next_day.day:02d}_{zone}.json',
@@ -70,13 +78,17 @@ def fetch_prices(zone='NO3'):
                                    'time_start': time_start,
                                    'time_end': time_end})
 
-        # find the lowest and highest (price) windows for the current day
-        # this means these windows wont traverse into the next day
         for window in price_windows:
-            tmp_prices = mark_price(tmp_prices, window, 'lowest')
-            tmp_prices = mark_price(tmp_prices, window, 'highest')
+            for direction in directions:
+                tmp_prices = mark_price(tmp_prices, window, direction)
 
         prices.extend(tmp_prices)
+
+    for hour in prices:
+        if any([value for key, value in hour.items() if key.endswith(('lowest', 'highest'))]):
+            hour['is_avarage'] = False
+        else:
+            hour['is_avarage'] = True
 
     current_hour = find_current_hour(prices, now)
 
@@ -97,25 +109,9 @@ def fetch_prices(zone='NO3'):
 
 @time_trigger("startup", "cron(0 * * * *)")
 @state_active("sensor.energy_price.prices is not None")
-def setup_sensors():
-    current_time = datetime.now(timezone.utc)
-    hour = find_current_hour(sensor.energy_price.prices, current_time)
-
-    # create individual sensors for these        
-    for key in [key for key in hour if key.endswith(('_lowest', '_highest'))]:
-        state.set(
-            f'sensor.energy_{key}',
-            value='on' if hour[key] == True else 'off',
-            new_attributes={
-                'unique_id': f'sensor.energy_{key}',
-                'object_id': f'sensor.energy_{key}',
-                'device_class': 'total',
-                'icon': 'mdi:transmission-tower-import'
-            },
-        )
-
-    # update the main sensor attrs
+def update_energy_sensors():
+    hour = find_current_hour(sensor.energy_price.prices, current_time())
     state.set(f'sensor.energy_price', value=hour['price_with_tarif'])
 
     for key, value in hour.items():
-        state.setattr(f'sensor.energy_price.{key}', hour[key])
+        state.setattr(f'sensor.energy_price.{key}', value)

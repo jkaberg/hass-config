@@ -1164,24 +1164,34 @@
     id: hjemme
   - platform: state
     entity_id:
-    - sensor.energy_is_4_lowest
-    to: 'on'
+    - sensor.energy_price
+    to: 'true'
     id: veldig-billig
+    attribute: is_4_lowest
   - platform: state
     entity_id:
-    - sensor.energy_is_8_lowest
-    to: 'on'
+    - sensor.energy_price
+    to: 'true'
     id: billig
+    attribute: is_8_lowest
   - platform: state
     entity_id:
-    - sensor.energy_is_8_highest
-    to: 'on'
+    - sensor.energy_price
+    attribute: is_avarage
+    to: 'true'
+    id: mellom
+  - platform: state
+    entity_id:
+    - sensor.energy_price
     id: dyrt
+    attribute: is_8_highest
+    to: 'true'
   - platform: state
     entity_id:
-    - sensor.energy_is_4_highest
-    to: 'on'
+    - sensor.energy_price
+    to: 'true'
     id: veldig-dyrt
+    attribute: is_4_highest
   condition: []
   action:
   - choose:
@@ -1223,6 +1233,19 @@
           entity_id: climate.varmtvannsbereder
         data:
           temperature: 65
+    - conditions:
+      - condition: trigger
+        id:
+        - mellom
+      - condition: state
+        entity_id: input_boolean.away_mode
+        state: 'off'
+      sequence:
+      - service: climate.set_temperature
+        target:
+          entity_id: climate.varmtvannsbereder
+        data:
+          temperature: 55
     - conditions:
       - condition: trigger
         id:
