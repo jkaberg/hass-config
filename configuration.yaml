@@ -1,26 +1,5 @@
 default_config:
 
-#my:
-#sun:
-#timer:
-#energy:
-#logbook:
-#history:
-#counter:
-#frontend:
-#schedule:
-#blueprint:
-#bluetooth:
-#media_source:
-#system_health:
-
-#input_text:
-#input_button:
-#input_number:
-#input_select:
-#input_boolean:
-#input_datetime:
-
 http:
   use_x_forwarded_for: true
   trusted_proxies:
@@ -32,16 +11,22 @@ logger:
   default: warning
   logs:
     homeassistant: info
+    ring_doorbell.doorbot: fatal
+    pychromecast.socket_client: fatal
     homeassistant.components.automation: fatal
     homeassistant.components.sensor.recorder: fatal
 #    homeassistant.components.rflink: debug
     custom_components.pyscript.scripts: debug
     custom_components.localtuya.common: fatal
 
-#recorder:
-
 rflink:
   port: /dev/ttyUSB0
+
+recorder:
+  exclude:
+    entities:
+      - input_number.last_mqtt_message_time
+      - automation.mqtt_inactivity_check
 
 homeassistant:
   customize_glob: !include customize.yaml
@@ -56,15 +41,9 @@ google_assistant:
 tts:
   - platform: google_translate
 
-group: !include groups.yaml
 cover: !include covers.yaml
 light: !include lights.yaml
-camera: !include camera.yaml
 notify: !include notify.yaml
 sensor: !include sensors.yaml
-switch: !include switch.yaml
-climate: !include climate.yaml
 pyscript: !include pyscript/config.yaml
 automation: !include automations.yaml
-utility_meter: !include utilitys.yaml
-binary_sensor: !include binary_sensors.yaml

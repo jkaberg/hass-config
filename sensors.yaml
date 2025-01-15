@@ -10,102 +10,30 @@
   display_options:
     - 'time'
 
-- platform: integration
-  name: energy_per_hour2
-  unique_id: energy_per_hour2
-  source: sensor.strommaler_power
-  unit_prefix: k
-  method: left
-- platform: integration
-  name: panasonic_ac_2_consumption_kwh
-  unique_id: panasonic_ac_2_consumption_kwh
-  source: sensor.panasonic_ac_power_consumption
-  unit_prefix: k
-  method: left
-- platform: integration
-  name: kjokken_platetopp_kwh
-  unique_id: kjokken_platetopp_kwh
-  source: sensor.kjokken_platetopp_sensor_power
-  unit_prefix: k
-  method: left
-- platform: integration
-  name: vaskerom_vvb_kwh
-  unique_id: vaskerom_vvb_kwh
-  source: sensor.vaskerom_vvb_watt_corrected
-  unit_prefix: k
-  method: left
-
-- platform: derivative
-  source: sensor.energy_per_hour2
-  name: Derivert effekt
-  round: 1
-  unit_time: "h"
-  time_window: "00:05:00"
-
 - platform: energytariff
   entity_id: "sensor.strommaler_power"
   levels:
   - name: "Trinn 1: 0-2 kWh"
     threshold: 2
-    price: 83
+    price: 134
   - name: "Trinn 2: 2-5 kWh"
     threshold: 5
-    price: 147
+    price: 239
   - name: "Trinn 3: 5-10 kWh"
     threshold: 10
-    price: 252
+    price: 408
   - name: "Trinn 4: 10-15 kWh"
     threshold: 15
-    price: 371
+    price: 601
   - name: "Trinn 5: 15-20 kWh"
     threshold: 20
-    price: 490
+    price: 794
 
-- platform: template
-  sensors:
-    panasonic_ac_inside_temperature:
-      friendly_name: "Inside Temperature"
-      unit_of_measurement: '°C'
-      value_template: "{{ state_attr('climate.panasonic_ac', 'current_temperature') }}"
-    vaskerom_vvb_temp_corrected:
-      friendly_name: "VVB temperatur justert"
-      icon_template: mdi:coolant-temperature
-      unit_of_measurement: '°C'
-      value_template: "{{ (states('sensor.vaskerom_vvb_air_temperature_2') | float(0) + 5) }}"
-    vaskerom_vvb_watt_corrected:
-      unit_of_measurement: 'W'
-      friendly_name: 'VVB effekt justert'  
-      icon_template: mdi:sine-wave  
-      value_template: >-
-        {% if is_state('switch.vaskerom_vvb', 'on') %}
-          {% set corrected_watt = states('sensor.vaskerom_vvb_electric_consumption_w') | float(0) - 354.0 %}
-          {% if corrected_watt > 25.0 %}
-            {{ corrected_watt }}
-          {% else %}
-            0.0
-          {% endif %}
-        {% else %}
-          0.0
-        {% endif %}
-    current_energy_consumption_kwh:
-      friendly_name: "Nygårdsvegen 6 nåværende forbruk kWh"
-      unique_id: sensor.current_energy_consumption_kwh
-      unit_of_measurement: 'kW'
-      device_class: 'power'
-      value_template: "{{ (states('sensor.strommaler_power') | float(0) / 1000) }}"
-    current_energy_cost_kwh:
-      friendly_name: "Nygårdsvegen 6 nåværende forbruk kostnad"
-      unique_id: sensor.current_energy_cost_kwh
-      unit_of_measurement: 'NOK'
-      device_class: 'monetary'
-      value_template: "{{ (states('sensor.current_energy_consumption_kwh') | float(0)) * (states('sensor.energy_price') | float(0)) }}"
-
-
-- platform: systemmonitor
-  resources:
-    - type: memory_use_percent
-    - type: processor_use
-    - type: last_boot
-    - type: load_15m
-    - type: load_5m
-    - type: load_1m
+# Brukes med ENTSO-E integrasjonen ift konvertering av EUR til NOK
+# for beregning av strømrpis
+- platform: rest
+  resource: https://data.norges-bank.no/api/data/EXR/B.EUR.NOK.SP?lastNObservations=1&format=sdmx-json
+  name: kurs_eur
+  scan_interval: 43200
+  unit_of_measurement: NOK
+  value_template: "{{ value_json['data']['dataSets'][0]['series']['0:0:0:0']['observations']['0'][0] }}"

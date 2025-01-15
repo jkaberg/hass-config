@@ -1,9 +1,0 @@
-someone_home:
-  entities:
-    - device_tracker.sm_s901b
-    - device_tracker.iphone
-
-tts_enheter:
-  entities:
-    - media_player.stue
-    - media_player.gang

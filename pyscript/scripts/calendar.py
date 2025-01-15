@@ -7,7 +7,9 @@ from dateutil.relativedelta import relativedelta
 from icalendar import Calendar, Event
 
 @state_trigger("calendar.familie")
-async def cal_to_ical(var_name=None, months=2):
+@service
+@time_trigger("cron(* */2 * * *)")
+async def cal_to_ical(var_name="calendar.familie", months=2):
     calendar = hass.data['calendar'].get_entity(var_name)
 
     if calendar:

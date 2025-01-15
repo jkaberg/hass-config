@@ -1,5 +1,5 @@
- - name: varsle_telefoner
-   platform: group
-   services:
-     - service: mobile_app_iphone
-     - service: mobile_app_sm_s901b
+- name: mobile_phones
+  platform: group
+  services:
+    - service: mobile_app_joels_telefon
+    - service: mobile_app_iphone

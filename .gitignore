@@ -2,7 +2,7 @@
 .cloud/
 .storage/
 .vscode/
-pyscript/scripts/doors.py
+backups/
 blueprints/
 custom_components/
 custom_templates/
