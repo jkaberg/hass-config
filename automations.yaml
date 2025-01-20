@@ -390,31 +390,106 @@
         action: switch.turn_on
   mode: single
 - id: '1703960225498'
-  alias: 'Inngang: Ringeklokke ringelyd på høytalere'
+  alias: 'Inngang: Ringeklokke ringelyd på høytalere og varsling'
   description: ''
   triggers:
   - entity_id:
     - event.dorklokke_ding
-    trigger: state
     enabled: true
+    trigger: state
+    id: ding
+  - trigger: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: UNLOCK_DOOR
+    id: unlock-door
   conditions: []
   actions:
-  - metadata:
-      title: Ding dong
-      thumbnail:
-      media_class: music
-      children_media_class:
-      navigateIds:
-      - {}
-      - media_content_type: app
-        media_content_id: media-source://media_source
-    data:
-      media_content_id: https://hast.eth0.sh/local/audio/doorbell.mp3
-      media_content_type: audio/mpeg
-    target:
-      entity_id:
-      - media_player.gminis
-    action: media_player.play_media
+  - alias: Ding ding og send bilde
+    if:
+    - condition: trigger
+      id:
+      - ding
+    then:
+    - parallel:
+      - sequence:
+        - metadata:
+            title: Ding dong
+            thumbnail:
+            media_class: music
+            children_media_class:
+            navigateIds:
+            - {}
+            - media_content_type: app
+              media_content_id: media-source://media_source
+          data:
+            media_content_id: https://hast.eth0.sh/local/audio/doorbell.mp3
+            media_content_type: audio/mpeg
+          target:
+            entity_id:
+            - media_player.gminis
+          action: media_player.play_media
+        - action: button.press
+          target:
+            entity_id: button.ringeklokke_take_snapshot
+          data: {}
+        - alias: Send med eller uten bilde
+          if:
+          - condition: state
+            entity_id: lock.hoveddor
+            state: locked
+          then:
+          - alias: Send med lås opp action
+            data:
+              data:
+                image: https://hast.eth0.sh{{ state_attr('camera.front_door_snapshot',
+                  'entity_picture') }}
+                actions:
+                - action: UNLOCK_DOOR
+                  title: Lås opp hoveddør
+              message: Noen ringer på døren!
+            action: notify.mobile_phones
+          else:
+          - alias: Send uten action
+            data:
+              data:
+                image: https://hast.eth0.sh{{ state_attr('camera.front_door_snapshot',
+                  'entity_picture') }}
+              message: Noen ringer på døren!
+            action: notify.mobile_phones
+      - parallel:
+        - action: browser_mod.popup
+          metadata: {}
+          data:
+            dismissable: true
+            autoclose: true
+            title: Hoveddør
+            timeout: 60000
+            browser_id:
+            - f9dc335c7903a04b98d0ebe0c5225c0a
+            content:
+              show_state: false
+              show_name: false
+              camera_view: live
+              type: picture-entity
+              entity: camera.dorklokke_live_view
+              tap_action:
+                action: none
+            size: wide
+  - if:
+    - condition: trigger
+      id:
+      - unlock-door
+    - condition: state
+      entity_id: lock.hoveddor
+      state: locked
+    then:
+    - action: lock.unlock
+      metadata: {}
+      data: {}
+      target:
+        entity_id: lock.hoveddor
+    alias: Lås opp hoveddør
   mode: single
 - id: '1704022463153'
   alias: 'Kjøkken: Synkronisere taklys med viftelys'
@@ -538,28 +613,28 @@
 - id: '1704054953570'
   alias: 'Internett: veksle av/på'
   description: ''
-  trigger:
-  - platform: time
-    at: 00:00:05
-    id: 'off'
-  - platform: time
-    at: 06:00:00
+  triggers:
+  - at: 00:00:05
+    id: natt
+    trigger: time
+  - at: 06:00:00
     id: helg
-  - platform: time
-    at: 06:00:00
+    trigger: time
+  - at: 07:40:00
     id: ukedag
-  condition: []
-  action:
+    trigger: time
+  conditions: []
+  actions:
   - choose:
     - conditions:
       - condition: trigger
         id:
-        - 'off'
+        - natt
       sequence:
-      - service: switch.turn_on
-        target:
+      - target:
           entity_id: switch.gw_mgmt_lan_filter_rule_1692694478_homeassistant_block_internet_2
         data: {}
+        action: switch.turn_on
     - conditions:
       - condition: trigger
         id:
@@ -569,10 +644,10 @@
         - sat
         - sun
       sequence:
-      - service: switch.turn_off
-        target:
+      - target:
           entity_id: switch.gw_mgmt_lan_filter_rule_1692694478_homeassistant_block_internet_2
         data: {}
+        action: switch.turn_off
     - conditions:
       - condition: trigger
         id:
@@ -585,11 +660,11 @@
         - wed
         - fri
       sequence:
-      - service: switch.turn_off
-        metadata: {}
+      - metadata: {}
         data: {}
         target:
           entity_id: switch.gw_mgmt_lan_filter_rule_1692694478_homeassistant_block_internet_2
+        action: switch.turn_off
   mode: single
 - id: '1704062468309'
   alias: 'Stua: Veksle infoskjerm ved bevegelse'
@@ -652,6 +727,9 @@
     below: 1
     id: ingen-hjemme
     trigger: numeric_state
+  - trigger: homeassistant
+    event: start
+    id: hass-start
   conditions: []
   actions:
   - choose:
@@ -659,10 +737,14 @@
       - condition: trigger
         id:
         - morgen
+        - hass-start
       - condition: state
         entity_id: sun.sun
         enabled: true
         state: below_horizon
+      - condition: time
+        after: 05:29:00
+        before: '10:00:00'
       sequence:
       - target:
           entity_id: switch.sunset_sunrise_lights
@@ -673,6 +755,9 @@
       - condition: trigger
         id:
         - sol-opp
+        - hass-start
+      - condition: sun
+        after: sunrise
       sequence:
       - parallel:
         - target:
@@ -702,6 +787,9 @@
       - condition: trigger
         id:
         - sol-ned
+        - hass-start
+      - condition: sun
+        after: sunset
       sequence:
       - parallel:
         - if:
@@ -727,6 +815,9 @@
       - condition: trigger
         id:
         - natt
+        - hass-start
+      - condition: time
+        after: '23:29:00'
       sequence:
       - parallel:
         - data:
@@ -755,6 +846,10 @@
       - condition: trigger
         id:
         - ingen-hjemme
+        - hass-start
+      - condition: numeric_state
+        entity_id: zone.home
+        below: 1
       sequence:
       - data:
           value: 0
@@ -926,39 +1021,45 @@
 - id: '1704269856111'
   alias: 'Dører: Håndtere låsene'
   description: ''
-  trigger:
-  - platform: time
-    at: 06:30:00
+  triggers:
+  - at: 06:30:00
     id: morgen
-  - platform: time
-    at: '22:30:00'
+    trigger: time
+  - at: '22:30:00'
     id: natt
-  - platform: numeric_state
-    entity_id:
+    trigger: time
+  - entity_id:
     - zone.home
     above: 0
     id: hjemme
     alias: Noen er hjemme
-  - platform: numeric_state
-    entity_id:
+    trigger: numeric_state
+  - entity_id:
     - zone.home
     below: 1
     id: ingen-hjemme
     alias: Ingen er hjemme
-  condition: []
-  action:
+    trigger: numeric_state
+  - trigger: homeassistant
+    event: start
+    id: hass-start
+  conditions: []
+  actions:
   - choose:
     - conditions:
       - condition: trigger
         id:
         - morgen
         - hjemme
-      - condition: time
-        after: 06:00:00
-        before: '22:29:00'
-      - condition: numeric_state
-        entity_id: zone.home
-        above: 0
+        - hass-start
+      - condition: or
+        conditions:
+        - condition: numeric_state
+          entity_id: zone.home
+          above: 0
+        - condition: time
+          after: 06:00:00
+          before: '22:29:00'
       sequence:
       - sequence:
         - target:
@@ -986,6 +1087,14 @@
         id:
         - ingen-hjemme
         - natt
+        - hass-start
+      - condition: or
+        conditions:
+        - condition: numeric_state
+          entity_id: zone.home
+          below: 1
+        - condition: time
+          after: '22:29:00'
       sequence:
       - sequence:
         - target:
@@ -1417,4 +1526,21 @@
       - input_number.jonas_uke_karakter
       - input_number.sofie_uke_karakter
       - input_number.markus_uke_karakter
+  mode: single
+- id: '1737304567547'
+  alias: System:Reload Entso_E if unavailable
+  description: ''
+  triggers:
+  - hours: /1
+    trigger: time_pattern
+  conditions:
+  - condition: state
+    entity_id: sensor.average_electricity_price_today
+    state:
+    - unknown
+    - unavailable
+  actions:
+  - data:
+      entry_id: 92d117d0ece9122b04ac7c281c5fdc32
+    action: homeassistant.reload_config_entry
   mode: single

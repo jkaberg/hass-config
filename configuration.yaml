@@ -8,9 +8,10 @@ http:
   login_attempts_threshold: 3
 
 logger:
-  default: warning
+  default: info
   logs:
     homeassistant: info
+    aioesphomeapi.connection: fatal
     ring_doorbell.doorbot: fatal
     pychromecast.socket_client: fatal
     homeassistant.components.automation: fatal
