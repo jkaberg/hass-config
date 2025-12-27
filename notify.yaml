@@ -1,5 +1,5 @@
 - name: mobile_phones
   platform: group
   services:
-    - service: mobile_app_joels_telefon
+    - service: mobile_app_joel_sin_s24
     - service: mobile_app_iphone

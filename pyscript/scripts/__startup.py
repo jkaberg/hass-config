@@ -8,8 +8,11 @@ if "/config/pyscript/modules" not in sys.path:
 @time_trigger
 def install_pkgs():
     # Install a package on PyPi. Accepts pip compatible package strings.
-    pkgs = ["icalendar", 
-            "aiofile"]
+    pkgs = [
+        "icalendar",
+        "aiofile",
+        "pyyaml",
+    ]
 
     for pkg in pkgs:
         # https://github.com/home-assistant/core/blob/dev/homeassistant/util/package.py#L64
